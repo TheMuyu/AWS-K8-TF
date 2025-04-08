@@ -13,12 +13,20 @@ yarn-error.log
 
 # IDEs and editors
 .idea/
+*.iws
+*.iml
+*.ipr
 .project
 .classpath
 .c9/
 *.launch
 .settings/
 *.sublime-workspace
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
 # Visual Studio Code
 /*/*/.vscode/*
