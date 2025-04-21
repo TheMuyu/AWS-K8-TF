@@ -1,5 +1,5 @@
 resource "aws_security_group" "rds_sg" {
-  name        = "rds_sg"
+  name        = "task-ce-rds-sg"
   description = "Allow RDS access"
   vpc_id      = var.vpc_id
 
@@ -8,7 +8,10 @@ resource "aws_security_group" "rds_sg" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [var.backend_sg_id]
+    security_groups = [
+      var.backend_sg_id,
+      var.eks_cluster_sg_id
+    ]
   }
 
   egress {
@@ -79,6 +82,7 @@ module "rds" {
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
 
   publicly_accessible = false
+  storage_encrypted = true
   skip_final_snapshot = true
 
   tags = {

@@ -17,8 +17,3 @@ output "security_group_id_backend" {
   description = "Security group ID for backend"
   value       = aws_security_group.backend_sg.id
 }
-
-output "security_group_id_rds" {
-  description = "Security group ID for RDS"
-  value       = aws_security_group.rds_sg.id
-}

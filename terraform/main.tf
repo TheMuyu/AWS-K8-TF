@@ -9,7 +9,7 @@ module "vpc" {
 }
 
 resource "aws_security_group" "backend_sg" {
-  name        = "backend_sg"
+  name        = "task-ce-backend_sg"
   description = "Allow inbound traffic on port 8080 from public subnets"
   vpc_id      = module.vpc.vpc_id
 
@@ -35,4 +35,13 @@ module "rds" {
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnets
   backend_sg_id = aws_security_group.backend_sg.id
+
+  eks_cluster_sg_id  = module.eks.cluster_security_group_id
+}
+
+module "eks" {
+  source = "./modules/eks"
+
+  vpc_id            = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnets
 }
