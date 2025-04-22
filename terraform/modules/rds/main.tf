@@ -10,7 +10,8 @@ resource "aws_security_group" "rds_sg" {
     protocol        = "tcp"
     security_groups = [
       var.backend_sg_id,
-      var.eks_cluster_sg_id
+      var.eks_cluster_sg_id,
+      var.bastion_sg_id
     ]
   }
 
@@ -60,6 +61,17 @@ resource "aws_db_subnet_group" "rds_subnet_group" {
   }
 }
 
+resource "aws_kms_key" "rds_kms_key" {
+  description = "KMS key for encrypting RDS storage for task-ce project"
+  deletion_window_in_days = 10
+  enable_key_rotation = true
+}
+
+resource "aws_kms_alias" "rds_kms_alias" {
+  name = "alias/task-ce-rds-kms"
+  target_key_id = aws_kms_key.rds_kms_key.id
+}
+
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = "6.11.0"
@@ -83,6 +95,7 @@ module "rds" {
 
   publicly_accessible = false
   storage_encrypted = true
+  kms_key_id = aws_kms_key.rds_kms_key.arn
   skip_final_snapshot = true
 
   tags = {
