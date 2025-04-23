@@ -72,6 +72,31 @@ resource "aws_kms_alias" "rds_kms_alias" {
   target_key_id = aws_kms_key.rds_kms_key.id
 }
 
+# IAM role for Enhanced Monitoring
+resource "aws_iam_role" "rds_monitoring_role" {
+  name = "task-ce-rds-monitoring-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "rds.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+# Attach the necessary policy for Enhanced Monitoring to the IAM role
+resource "aws_iam_policy_attachment" "rds_monitoring_policy_attachment" {
+  name       = "rds-monitoring-policy-attachment"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+  roles      = [aws_iam_role.rds_monitoring_role.name]
+}
+
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = "6.11.0"
@@ -97,6 +122,11 @@ module "rds" {
   storage_encrypted = true
   kms_key_id = aws_kms_key.rds_kms_key.arn
   skip_final_snapshot = true
+  backup_retention_period = 1
+
+  # Enable Enhanced Monitoring
+  monitoring_interval       = 60  # Monitoring interval in seconds (60 seconds)
+  monitoring_role_arn       = aws_iam_role.rds_monitoring_role.arn  # The role ARN for monitoring
 
   tags = {
     Terraform   = "true"
