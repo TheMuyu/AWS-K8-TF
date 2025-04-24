@@ -1,0 +1,21 @@
+name: Build and Deploy
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  deploy:
+    name: Build and Deploy to AWS
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      ECR_REPO_BACKEND: 147997148756.dkr.ecr.us-east-1.amazonaws.com/aws-k8s-tf/backend
+      ECR_REPO_FRONTEND: 147997148756.dkr.ecr.us-east-1.amazonaws.com/aws-k8s-tf/frontend
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # Steps B & C will go here later
