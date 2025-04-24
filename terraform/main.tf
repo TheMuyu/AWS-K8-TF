@@ -58,6 +58,8 @@ module "bastion" {
 module "alb" {
   source = "./modules/alb"
   vpc_id = module.vpc.vpc_id
+
+  depends_on = [module.eks]
 }
 
 resource "kubernetes_service_account" "alb_sa" {
@@ -116,6 +118,9 @@ resource "helm_release" "alb_ingress" {
 
 resource "aws_route53_zone" "main" {
   name = "muratyurtdas.com"
+  tags = {
+    Name = "task-ce-hosted"
+  }
 }
 
 resource "aws_route53_record" "nginx" {
