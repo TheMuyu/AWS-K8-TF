@@ -129,7 +129,7 @@ resource "aws_route53_record" "nginx" {
   type    = "A"
 
   alias {
-    name                   = "k8s-test-nginxing-d1a7d572bb-1101447806.us-east-1.elb.amazonaws.com"
+    name                   = "k8s-test-nginxing-d1a7d572bb-815771783.us-east-1.elb.amazonaws.com"
     zone_id                = "Z35SXDOTRQ7X7K" # This is the hosted zone ID for ALB in us-east-1
     evaluate_target_health = true
   }

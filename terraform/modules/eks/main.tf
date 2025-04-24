@@ -78,8 +78,8 @@ module "eks" {
     default_node_group = {
       instance_types = ["t3.micro"]
       min_size     = 2
-      max_size     = 2
-      desired_size = 2
+      max_size     = 4
+      desired_size = 3
 
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
     }
