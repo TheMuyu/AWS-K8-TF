@@ -51,3 +51,7 @@ output "bastion_private_key_pem" {
   value       = module.bastion.bastion_private_key_pem
   sensitive   = true
 }
+
+output "route53_name_servers" {
+  value = aws_route53_zone.main.name_servers
+}
