@@ -1,20 +1,18 @@
-# Start from a Java image with JDK
-FROM eclipse-temurin:17-jdk-alpine as build
+# Stage 1: Build with Java 23
+FROM eclipse-temurin:23-jdk as build
 
 WORKDIR /app
 
-# Copy pom.xml and install dependencies
 COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
 RUN chmod +x mvnw && ./mvnw dependency:go-offline
 
-# Copy source and build the app
 COPY src ./src
 RUN ./mvnw clean package -DskipTests
 
-# Stage 2 - Run the app
-FROM eclipse-temurin:17-jre-alpine
+# Stage 2: Run with JRE 23
+FROM eclipse-temurin:23-jre
 
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
