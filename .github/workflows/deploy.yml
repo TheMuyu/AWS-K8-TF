@@ -18,4 +18,41 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      # Steps B & C will go here later
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get release tag
+        id: get_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
+
+      - name: Build and push backend
+        run: |
+          docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend
+          docker push $ECR_REPO_BACKEND:$RELEASE_VERSION
+
+      - name: Build and push frontend
+        run: |
+          docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend
+          docker push $ECR_REPO_FRONTEND:$RELEASE_VERSION
+          
+      - name: Setup kubectl
+        run: |
+          aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Update backend deployment image
+        run: |
+          kubectl set image deployment/backend -n default-backend backend=$ECR_REPO_BACKEND:$RELEASE_VERSION
+
+      - name: Update frontend deployment image
+        run: |
+          kubectl set image deployment/frontend -n default-frontend frontend=$ECR_REPO_FRONTEND:$RELEASE_VERSION
+
