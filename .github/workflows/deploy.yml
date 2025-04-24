@@ -50,9 +50,9 @@ jobs:
 
       - name: Update backend deployment image
         run: |
-          kubectl set image deployment/backend -n default backend=$ECR_REPO_BACKEND:$RELEASE_VERSION
+          kubectl set image deployment/backend -n backend backend=$ECR_REPO_BACKEND:$RELEASE_VERSION
 
       - name: Update frontend deployment image
         run: |
-          kubectl set image deployment/frontend -n default frontend=$ECR_REPO_FRONTEND:$RELEASE_VERSION
+          kubectl set image deployment/frontend -n frontend frontend=$ECR_REPO_FRONTEND:$RELEASE_VERSION
 
