@@ -120,7 +120,7 @@ resource "aws_route53_zone" "main" {
 
 resource "aws_route53_record" "nginx" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "muratyurtdas.com"
+  name    = "app.muratyurtdas.com"
   type    = "A"
 
   alias {
