@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 })
 export class SumService {
 
-  private apiUrl = 'http://localhost:8080/api/sum';
+  private apiUrl = '/api/sum';
 
   constructor(private http: HttpClient) {}
 
