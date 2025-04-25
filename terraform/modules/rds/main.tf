@@ -10,7 +10,7 @@ resource "aws_security_group" "rds_sg" {
     protocol        = "tcp"
     security_groups = [
       var.backend_sg_id,
-      var.eks_cluster_sg_id,
+      var.eks_node_sg_id,
       var.bastion_sg_id
     ]
   }
@@ -33,7 +33,7 @@ resource "random_password" "db_password" {
 
 resource "aws_secretsmanager_secret" "db_credentials" {
   description             = "Database credentials stored"
-  name                    = "db_credentials2"
+  name                    = "db_credentials5"
   recovery_window_in_days = 7
 }
 
@@ -119,6 +119,7 @@ module "rds" {
   kms_key_id = aws_kms_key.rds_kms_key.arn
   skip_final_snapshot = true
   backup_retention_period = 1
+  manage_master_user_password = false
 
   # Enable Enhanced Monitoring
   monitoring_interval       = 60  # Monitoring interval in seconds (60 seconds)
@@ -129,12 +130,4 @@ module "rds" {
     Name        = "ce-task-rds-sumdb"
     Environment = "dev"
   }
-}
-
-data "aws_secretsmanager_secret_version" "db" {
-  secret_id = "db_credentials2"
-}
-
-data "aws_rds_cluster" "main" {
-  cluster_identifier = "sumdb-instance"
 }

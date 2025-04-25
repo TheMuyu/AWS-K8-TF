@@ -36,7 +36,7 @@ module "rds" {
   private_subnet_ids = module.vpc.private_subnets
   backend_sg_id      = aws_security_group.backend_sg.id
 
-  eks_cluster_sg_id = module.eks.cluster_security_group_id
+  eks_node_sg_id     = module.eks.node_security_group_id
   bastion_sg_id     = module.bastion.bastion_sg_id
 }
 

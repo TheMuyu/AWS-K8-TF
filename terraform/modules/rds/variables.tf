@@ -13,12 +13,12 @@ variable "backend_sg_id" {
   type        = string
 }
 
-variable "eks_cluster_sg_id" {
-  description = "EKS Cluster security group ID"
+variable "bastion_sg_id" {
+  description = "Security group ID of the bastion host"
   type        = string
 }
 
-variable "bastion_sg_id" {
-  description = "Security group ID of the bastion host"
+variable "eks_node_sg_id" {
+  description = "EKS Node Security Group ID"
   type        = string
 }

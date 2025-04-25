@@ -35,9 +35,9 @@ output "eks_cluster_endpoint" {
   value       = module.eks.cluster_endpoint
 }
 
-output "eks_cluster_sg_id" {
-  description = "Security group ID associated with the EKS cluster control plane."
-  value       = module.eks.cluster_security_group_id
+output "eks_node_sg_id" {
+  description = "Security group ID associated with the EKS Node control plane."
+  value       = module.eks.node_security_group_id
 }
 
 #Bastion
