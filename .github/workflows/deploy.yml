@@ -50,6 +50,12 @@ jobs:
       - name: Setup kubectl
         run: |
           aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+          
+      - name: Deploy Kubernetes Resources
+        run: |
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/frontend-service.yaml
+          kubectl apply -f k8s/frontend-ingress.yaml
 
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
