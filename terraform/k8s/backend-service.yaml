@@ -2,10 +2,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
-  namespace: default
+  namespace: backend  # <-- Correct namespace to match deployment
 spec:
   selector:
-    app: backend
+    app: backend      # <-- Matches your backend pod label
   ports:
     - protocol: TCP
       port: 8080
