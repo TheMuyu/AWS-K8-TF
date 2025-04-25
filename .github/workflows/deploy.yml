@@ -18,6 +18,9 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -43,10 +46,35 @@ jobs:
         run: |
           docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend/sum-app
           docker push $ECR_REPO_FRONTEND:$RELEASE_VERSION
-          
+
       - name: Setup kubectl
         run: |
           aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Retrieve DB credentials from AWS Secrets Manager
+        id: db_secrets
+        run: |
+          secrets=$(aws secretsmanager get-secret-value --secret-id db_credentials2 --query SecretString --output text)
+          echo "$secrets" > db_creds.json
+          echo "::set-output name=db_username::$(jq -r .username db_creds.json)"
+          echo "::set-output name=db_password::$(jq -r .password db_creds.json)"
+          echo "::set-output name=db_name::$(jq -r .dbname db_creds.json)"
+          
+      - name: Get RDS endpoint
+        id: rds
+        run: |
+          rds_endpoint=$(aws rds describe-db-instances --db-instance-identifier sumdb-instance --query "DBInstances[0].Endpoint.Address" --output text)
+          echo "::set-output name=endpoint::$rds_endpoint"
+
+      - name: Create Kubernetes Secret for backend
+        run: |
+          kubectl create secret generic db-credentials \
+            --namespace=backend \
+            --from-literal=username=${{ steps.db_secrets.outputs.db_username }} \
+            --from-literal=password=${{ steps.db_secrets.outputs.db_password }} \
+            --from-literal=dbname=${{ steps.db_secrets.outputs.db_name }} \
+            --from-literal=host=${{ steps.rds.outputs.endpoint }} \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Update backend deployment image
         run: |

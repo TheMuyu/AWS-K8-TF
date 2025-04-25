@@ -130,3 +130,11 @@ module "rds" {
     Environment = "dev"
   }
 }
+
+data "aws_secretsmanager_secret_version" "db" {
+  secret_id = "db_credentials2"
+}
+
+data "aws_rds_cluster" "main" {
+  cluster_identifier = "sumdb-instance"
+}
