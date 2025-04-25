@@ -23,10 +23,6 @@ resource "aws_security_group" "rds_sg" {
   }
 }
 
-resource "random_id" "suffix" {
-  byte_length = 4
-}
-
 resource "random_password" "db_password" {
   length  = 16
   special = true
@@ -37,7 +33,7 @@ resource "random_password" "db_password" {
 
 resource "aws_secretsmanager_secret" "db_credentials" {
   description             = "Database credentials stored"
-  name                    = "db_credentials-${random_id.suffix.hex}"
+  name                    = "db_credentials"
   recovery_window_in_days = 7
 }
 

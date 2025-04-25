@@ -51,12 +51,3 @@ output "bastion_private_key_pem" {
   value       = module.bastion.bastion_private_key_pem
   sensitive   = true
 }
-
-output "db_credentials" {
-  value = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)
-  sensitive = true
-}
-
-output "db_secret_name" {
-  value = data.aws_secretsmanager_secret.db_credentials.name
-}
