@@ -33,7 +33,7 @@ resource "random_password" "db_password" {
 
 resource "aws_secretsmanager_secret" "db_credentials" {
   description             = "Database credentials stored"
-  name                    = "db_credentials"
+  name                    = "db_credentials2"
   recovery_window_in_days = 7
 }
 
