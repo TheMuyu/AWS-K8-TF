@@ -68,13 +68,19 @@ jobs:
 
       - name: Create Kubernetes Secret for backend
         run: |
-          kubectl create secret generic db-credentials \
-            --namespace=backend \
-            --from-literal=username=${{ steps.db_secrets.outputs.db_username }} \
-            --from-literal=password=${{ steps.db_secrets.outputs.db_password }} \
-            --from-literal=dbname=${{ steps.db_secrets.outputs.db_name }} \
-            --from-literal=host=${{ steps.rds.outputs.endpoint }} \
-            --dry-run=client -o yaml | kubectl apply -f -
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: db-credentials
+            namespace: backend
+          type: Opaque
+          stringData:
+            username: "${{ steps.db_secrets.outputs.db_username }}"
+            password: "${{ steps.db_secrets.outputs.db_password }}"
+            dbname: "${{ steps.db_secrets.outputs.db_name }}"
+            host: "${{ steps.rds.outputs.endpoint }}"
+          EOF
 
       - name: Update backend deployment image
         run: |
