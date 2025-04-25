@@ -52,6 +52,11 @@ output "bastion_private_key_pem" {
   sensitive   = true
 }
 
-output "route53_name_servers" {
-  value = aws_route53_zone.main.name_servers
+output "db_credentials" {
+  value = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)
+  sensitive = true
+}
+
+output "db_secret_name" {
+  value = data.aws_secretsmanager_secret.db_credentials.name
 }

@@ -115,3 +115,11 @@ resource "helm_release" "alb_ingress" {
     value = "aws-load-balancer-controller"
   }
 }
+
+data "aws_secretsmanager_secret" "db_credentials" {
+  name = "db_credentials-5410cd71"
+}
+
+data "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id = data.aws_secretsmanager_secret.db_credentials.id
+}
