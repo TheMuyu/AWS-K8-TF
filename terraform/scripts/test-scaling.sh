@@ -42,3 +42,4 @@ echo "👀 Watching backend and frontend HPA scaling..."
 echo ""
 
 kubectl get hpa -A --watch
+#kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml

@@ -54,10 +54,7 @@ jobs:
       - name: Deploy Kubernetes Resources
         run: |
           kubectl apply -f terraform/k8s/frontend-deployment.yaml
-          kubectl apply -f terraform/k8s/frontend-service.yaml
-          kubectl apply -f terraform/k8s/frontend-ingress.yaml
           kubectl apply -f terraform/k8s/backend-deployment.yaml
-          kubectl apply -f terraform/k8s/backend-service.yaml
 
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
