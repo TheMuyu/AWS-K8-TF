@@ -126,8 +126,66 @@ resource "aws_route53_record" "frontend" {
   type    = "A"
 
   alias {
-    name                   = "k8s-frontendingressgr-0493fcecd1-1385521154.us-east-1.elb.amazonaws.com"
+    name                   = "dualstack.k8s-frontendingressgr-0493fcecd1-1520572780.us-east-1.elb.amazonaws.com."
     zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
     evaluate_target_health = true
+  }
+}
+
+resource "helm_release" "fluentbit" {
+  name       = "aws-for-fluent-bit"
+  namespace  = "kube-system"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-for-fluent-bit"
+  version    = "0.1.35"
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "fluent-bit"
+  }
+
+  set {
+    name  = "cloudWatch.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "cloudWatch.region"
+    value = var.aws_region
+  }
+
+  set {
+    name  = "cloudWatch.logGroupName"
+    value = "/eks/cluster-logs"
+  }
+
+  set {
+    name  = "cloudWatch.logStreamPrefix"
+    value = "eks-logs"
+  }
+
+  set {
+    name  = "cloudWatch.logRetentionDays"
+    value = "7"
+  }
+
+  set {
+    name  = "firehose.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "elasticsearch.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kinesis.enabled"
+    value = "false"
   }
 }

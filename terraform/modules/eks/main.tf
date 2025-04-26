@@ -3,6 +3,33 @@ resource "aws_iam_policy" "alb_controller" {
   policy = file("${path.module}/alb_controller_policy.json")
 }
 
+resource "aws_iam_policy" "eks_node_group_cloudwatch_logs_policy" {
+  name        = "eks-node-group-cloudwatch-logs-policy"
+  description = "Allow EKS nodes to create CloudWatch Logs resources and push logs"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+          "logs:DescribeLogGroups"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eks_node_group_attach_cloudwatch_logs_policy" {
+  role       = aws_iam_role.eks_node_group_role.name
+  policy_arn = aws_iam_policy.eks_node_group_cloudwatch_logs_policy.arn
+}
+
+
 resource "aws_iam_role" "alb_sa_role" {
   name = "eks-alb-sa-role"
 
@@ -63,6 +90,17 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy_attachment" "eks_nodegroup_cloudwatch_agent" {
+  role       = aws_iam_role.eks_node_group_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_nodegroup_cloudwatch_logs" {
+  role       = aws_iam_role.eks_node_group_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.31"
@@ -76,10 +114,10 @@ module "eks" {
   # EKS managed node groups
   eks_managed_node_groups = {
     default_node_group = {
-      instance_types = ["t3.micro"]
+      instance_types = ["t3.medium"]
       min_size     = 2
       max_size     = 4
-      desired_size = 3
+      desired_size = 2
 
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
     }
