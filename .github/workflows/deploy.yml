@@ -56,6 +56,7 @@ jobs:
           kubectl apply -f terraform/k8s/frontend-deployment.yaml
           kubectl apply -f terraform/k8s/frontend-service.yaml
           kubectl apply -f terraform/k8s/frontend-ingress.yaml
+          kubectl apply -f terraform/k8s/backend-deployment.yaml
           kubectl apply -f terraform/k8s/backend-service.yaml
 
       - name: Retrieve DB credentials from AWS Secrets Manager
@@ -95,5 +96,5 @@ jobs:
 
       - name: Update frontend deployment image
         run: |
-          kubectl set image deployment/frontend-deployment -n default frontend=$ECR_REPO_FRONTEND:$RELEASE_VERSION
+          kubectl set image deployment/frontend -n frontend frontend=$ECR_REPO_FRONTEND:$RELEASE_VERSION
 
