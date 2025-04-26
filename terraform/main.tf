@@ -160,8 +160,8 @@ resource "helm_release" "fluentbit" {
   }
 
   set {
-    name  = "cloudWatch.logGroupName"
-    value = "/eks/cluster-logs"
+    name  = "cloudWatch.logGroupTemplate"
+    value = "/eks/$kubernetes['namespace_name']"
   }
 
   set {
@@ -189,3 +189,14 @@ resource "helm_release" "fluentbit" {
     value = "false"
   }
 }
+
+resource "aws_cloudwatch_log_group" "backend_log_group" {
+  name              = "/eks/backend"
+  retention_in_days = 7
+}
+
+resource "aws_cloudwatch_log_group" "frontend_log_group" {
+  name              = "/eks/frontend"
+  retention_in_days = 7
+}
+
