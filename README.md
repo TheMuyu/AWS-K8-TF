@@ -20,18 +20,18 @@ This project automates the deployment of a production-grade AWS infrastructure u
 
 ```
 +----------------+         +--------------------+
-|    Internet    |  --->   |   AWS ALB (Ingress)  |
+|    Internet    |  --->   | AWS ALB (Ingress)  |
 +----------------+         +--------------------+
                                   |
-                   +--------------+--------------+
-                   |                             |
+                   +--------------+
+                   |                             
           +----------------+            +----------------+
-          |  Frontend Pods  |            |  Backend Pods   |
+          | Frontend Pods  | +--------+ |  Backend Pods  |
           +----------------+            +----------------+
                                                   |
-                                           +--------------+
-                                           |   RDS (Postgres) |
-                                           +--------------+
+                                           +----------------+
+                                           | RDS (Postgres) |
+                                           +----------------+
 ```
 
 ## 📋 Prerequisites
