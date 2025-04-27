@@ -21,17 +21,17 @@ resource "helm_release" "aws_for_fluent_bit" {
   }
 
   set {
-    name  = "cloudWatch.logGroupNameKey"
-    value = "kubernetes['namespace_name']"
-  }
-
-  set {
-    name  = "cloudWatch.logGroupTemplate"
-    value = "/aws/eks/$kubernetes['namespace_name']"
+    name  = "cloudWatch.logGroupName"
+    value = "/aws/eks"
   }
 
   set {
     name  = "cloudWatch.logStreamPrefix"
-    value = "eks-"
+    value = "$kubernetes['namespace_name']/"
+  }
+
+  set {
+    name  = "cloudWatch.enabled"
+    value = "true"
   }
 }
