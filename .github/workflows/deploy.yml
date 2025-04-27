@@ -56,6 +56,10 @@ jobs:
           kubectl apply -f terraform/k8s/frontend-deployment.yaml
           kubectl apply -f terraform/k8s/backend-deployment.yaml
           
+      - name: Create amazon-cloudwatch namespace
+        run: |
+          kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
+        
       - name: Deploy CloudWatch Container Insights
         run: |
           kubectl apply -f terraform/modules/eks/manifests/cwagent-configmap.yaml
