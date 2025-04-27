@@ -4,12 +4,6 @@ resource "tls_private_key" "bastion_tls" {
   rsa_bits  = 4096
 }
 
-resource "local_file" "bastion_private_key" {
-  content         = tls_private_key.bastion_tls.private_key_pem
-  filename        = "${path.module}/bastion_key.pem"
-  file_permission = "0600"
-}
-
 resource "aws_key_pair" "bastion_key" {
   key_name   = var.key_name
   public_key = tls_private_key.bastion_tls.public_key_openssh
