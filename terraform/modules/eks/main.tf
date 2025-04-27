@@ -77,17 +77,20 @@ module "eks" {
   eks_managed_node_groups = {
     default_node_group = {
       instance_types = ["t3.medium"]
-      min_size     = 2
-      max_size     = 4
-      desired_size = 3
+      min_size       = 2
+      max_size       = 4
+      desired_size   = 3
 
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
+      iam_role_additional_policies = {
+        CloudWatchAgentPolicy = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+      }
     }
   }
 
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
-  enable_irsa = true
+  enable_irsa                     = true
 }
 
 locals {

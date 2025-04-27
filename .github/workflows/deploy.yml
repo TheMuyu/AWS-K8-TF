@@ -55,6 +55,15 @@ jobs:
         run: |
           kubectl apply -f terraform/k8s/frontend-deployment.yaml
           kubectl apply -f terraform/k8s/backend-deployment.yaml
+          
+      - name: Create amazon-cloudwatch namespace
+        run: |
+          kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
+        
+      - name: Deploy CloudWatch Container Insights
+        run: |
+          kubectl apply -f terraform/modules/eks/manifests/cwagent-configmap.yaml
+          kubectl apply -f terraform/modules/eks/manifests/cwagent-fluentd-eks.yaml
 
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
