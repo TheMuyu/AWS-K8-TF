@@ -120,92 +120,138 @@ resource "aws_route53_zone" "main" {
   name = "muratyurtdas.com"
 }
 
-# Fetch the ALB DNS dynamically
-# data "kubernetes_ingress" "frontend_ingress" {
-#   metadata {
-#     name      = "frontend-ingress"
-#     namespace = "frontend"
-#   }
-# }
+#this should run after k8s ingress created
+resource "aws_route53_record" "frontend" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "app.muratyurtdas.com"
+  type    = "A"
 
-# resource "aws_route53_record" "frontend" {
-#   zone_id = aws_route53_zone.main.zone_id
-#   name    = "app.muratyurtdas.com"
-#   type    = "A"
+  alias {
+    name                   = "k8s-frontendingressgr-0493fcecd1-1201767352.us-east-1.elb.amazonaws.com"
+    zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
+    evaluate_target_health = true
+  }
 
-#   alias {
-#     name                   = data.kubernetes_ingress.frontend_ingress.status.load_balancer.ingress[0].hostname
-#     zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
-#     evaluate_target_health = true
-#   }
-# }
+  depends_on = [helm_release.alb_ingress]
+}
 
 #kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-# resource "helm_release" "fluentbit" {
-#   name       = "aws-for-fluent-bit"
-#   namespace  = "kube-system"
-#   repository = "https://aws.github.io/eks-charts"
-#   chart      = "aws-for-fluent-bit"
-#   version    = "0.1.35"
+resource "helm_release" "fluentbit" {
+  name       = "aws-for-fluent-bit"
+  namespace  = "kube-system"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-for-fluent-bit"
+  version    = "0.1.35"
 
-#   set {
-#     name  = "serviceAccount.create"
-#     value = "true"
-#   }
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
 
-#   set {
-#     name  = "serviceAccount.name"
-#     value = "fluent-bit"
-#   }
+  set {
+    name  = "serviceAccount.name"
+    value = "fluent-bit"
+  }
 
-#   set {
-#     name  = "cloudWatch.enabled"
-#     value = "true"
-#   }
+  set {
+    name  = "cloudWatch.enabled"
+    value = "true"
+  }
 
-#   set {
-#     name  = "cloudWatch.region"
-#     value = var.aws_region
-#   }
+  set {
+    name  = "cloudWatch.region"
+    value = var.aws_region
+  }
 
-#   set {
-#     name  = "cloudWatch.logGroupTemplate"
-#     value = "/eks/$kubernetes['namespace_name']"
-#   }
+  set {
+    name  = "cloudWatch.logGroupTemplate"
+    value = "/eks/$kubernetes['namespace_name']"
+  }
 
-#   set {
-#     name  = "cloudWatch.logStreamPrefix"
-#     value = "eks-logs"
-#   }
+  set {
+    name  = "cloudWatch.logStreamPrefix"
+    value = "eks-logs"
+  }
 
-#   set {
-#     name  = "cloudWatch.logRetentionDays"
-#     value = "7"
-#   }
+  set {
+    name  = "cloudWatch.logRetentionDays"
+    value = "7"
+  }
 
-#   set {
-#     name  = "firehose.enabled"
-#     value = "false"
-#   }
+  set {
+    name  = "firehose.enabled"
+    value = "false"
+  }
 
-#   set {
-#     name  = "elasticsearch.enabled"
-#     value = "false"
-#   }
+  set {
+    name  = "elasticsearch.enabled"
+    value = "false"
+  }
 
-#   set {
-#     name  = "kinesis.enabled"
-#     value = "false"
-#   }
-# }
+  set {
+    name  = "kinesis.enabled"
+    value = "false"
+  }
 
-# resource "aws_cloudwatch_log_group" "backend_log_group" {
-#   name              = "/eks/backend"
-#   retention_in_days = 7
-# }
+  set {
+  name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+  value = aws_iam_role.fluentbit_irsa_role.arn
+}
+}
 
-# resource "aws_cloudwatch_log_group" "frontend_log_group" {
-#   name              = "/eks/frontend"
-#   retention_in_days = 7
-# }
+resource "aws_cloudwatch_log_group" "backend_log_group" {
+  name              = "/eks/backend"
+  retention_in_days = 7
+}
 
+resource "aws_cloudwatch_log_group" "frontend_log_group" {
+  name              = "/eks/frontend"
+  retention_in_days = 7
+}
+
+resource "aws_iam_role" "fluentbit_irsa_role" {
+  name = "eks-fluentbit-irsa-role"
+
+  assume_role_policy = data.aws_iam_policy_document.fluentbit_assume_role_policy.json
+}
+
+data "aws_iam_policy_document" "fluentbit_assume_role_policy" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [module.eks.oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider_url}:sub"
+      values   = ["system:serviceaccount:kube-system:fluent-bit"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "fluentbit_irsa_policy" {
+  name = "eks-fluentbit-irsa-policy"
+  role = aws_iam_role.fluentbit_irsa_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:PutLogEvents",
+          "logs:CreateLogStream",
+          "logs:DescribeLogStreams",
+          "logs:DescribeLogGroups",
+          "logs:CreateLogGroup"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
