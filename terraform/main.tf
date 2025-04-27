@@ -126,7 +126,7 @@ resource "aws_route53_record" "frontend" {
   type    = "A"
 
   alias {
-    name                   = "k8s-frontendingressgr-0493fcecd1-1385521154.us-east-1.elb.amazonaws.com"
+    name                   = "k8s-frontendingressgr-0493fcecd1-1201767352.us-east-1.elb.amazonaws.com"
     zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
     evaluate_target_health = true
   }
