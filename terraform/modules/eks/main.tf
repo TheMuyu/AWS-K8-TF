@@ -67,8 +67,8 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.31"
 
-  cluster_name    = "task-ce-eks-cluster"
-  cluster_version = "1.31"
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
 
   vpc_id     = var.vpc_id
   subnet_ids = var.private_subnet_ids
@@ -76,10 +76,10 @@ module "eks" {
   # EKS managed node groups
   eks_managed_node_groups = {
     default_node_group = {
-      instance_types = ["t3.micro"]
-      min_size       = 1
-      max_size       = 2
-      desired_size   = 1
+      instance_types = [var.eks_node_instance_type]
+      desired_size   = var.eks_node_desired_capacity
+      min_size       = var.eks_node_min_size
+      max_size       = var.eks_node_max_size
 
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
       iam_role_additional_policies = {

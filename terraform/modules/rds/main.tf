@@ -102,7 +102,7 @@ module "rds" {
   engine            = "postgres"
   engine_version    = "15"
   family            = "postgres15"
-  instance_class    = "db.t3.micro"
+  instance_class    = var.rds_instance_class
   allocated_storage = 20
 
   # Fetch DB credentials from AWS Secrets Manager
