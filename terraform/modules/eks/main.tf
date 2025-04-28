@@ -76,10 +76,10 @@ module "eks" {
   # EKS managed node groups
   eks_managed_node_groups = {
     default_node_group = {
-      instance_types = ["t3.medium"]
-      min_size       = 2
-      max_size       = 4
-      desired_size   = 3
+      instance_types = ["t3.micro"]
+      min_size       = 1
+      max_size       = 2
+      desired_size   = 1
 
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
       iam_role_additional_policies = {
