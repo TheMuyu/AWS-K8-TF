@@ -146,18 +146,18 @@ resource "helm_release" "alb_ingress" {
   }
 }
 
-# resource "aws_route53_zone" "main" {
-#   name = "muratyurtdas.com"
-# }
+resource "aws_route53_zone" "main" {
+  name = "muratyurtdas.com"
+}
 
-# resource "aws_route53_record" "frontend" {
-#   zone_id = aws_route53_zone.main.zone_id
-#   name    = "app.muratyurtdas.com"
-#   type    = "A"
+resource "aws_route53_record" "frontend" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "app.muratyurtdas.com"
+  type    = "A"
 
-#   alias {
-#     name                   = "k8s-frontendingressgr-0493fcecd1-1201767352.us-east-1.elb.amazonaws.com"
-#     zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
-#     evaluate_target_health = true
-#   }
-# }
+  alias {
+    name                   = "k8s-frontendingressgr-0493fcecd1-293296825.us-east-1.elb.amazonaws.com"
+    zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
+    evaluate_target_health = true
+  }
+}
