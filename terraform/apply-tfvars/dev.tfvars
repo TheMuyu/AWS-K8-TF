@@ -8,6 +8,7 @@ private_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24"]
 
 alert_email_address = "muratyurtdas@gmail.com"
 enable_watch_module = false
+enable_state_module = false
 
 cluster_name    = "task-ce-eks-cluster"
 cluster_version = "1.31"

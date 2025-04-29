@@ -83,3 +83,8 @@ variable "environment" {
   description = "Environment"
   type        = string
 }
+
+variable "enable_state_module" {
+  description = "Whether to enable the TF State module"
+  type        = bool
+}

@@ -35,15 +35,15 @@ data "aws_eks_cluster_auth" "eks_cluster_auth" {
 }
 
 #State pointing remote dev
-terraform {
-  backend "s3" {
-    bucket         = "aws-k8-tf-state-dev"
-    key            = "dev/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "aws-k8-tf-locks-dev"
-    encrypt        = true
-  }
-}
+# terraform {
+#   backend "s3" {
+#     bucket         = "aws-k8-tf-state-dev"
+#     key            = "dev/terraform.tfstate"
+#     region         = "us-east-1"
+#     dynamodb_table = "aws-k8-tf-locks-dev"
+#     encrypt        = true
+#   }
+# }
 
 #State pointing remote prod
 # terraform {

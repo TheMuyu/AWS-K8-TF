@@ -84,10 +84,13 @@ module "watch" {
 }
 
 module "state" {
-  source                   = "./modules/state"
-  tf_state_bucket_name     = var.tf_state_bucket_name
-  tf_state_dynamodb_table  = var.tf_state_dynamodb_table
-  environment              = var.environment
+  source = "./modules/state"
+
+  count = var.enable_state_module ? 1 : 0
+
+  tf_state_bucket_name    = var.tf_state_bucket_name
+  tf_state_dynamodb_table = var.tf_state_dynamodb_table
+  environment             = var.environment
 }
 
 resource "kubernetes_service_account" "alb_sa" {
