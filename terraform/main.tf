@@ -83,14 +83,12 @@ module "watch" {
   depends_on = [module.eks]
 }
 
-# resource "aws_eks_access_entry" "iam_user_admin_access" {
-#   cluster_name      = var.cluster_name
-#   principal_arn     = var.eks_admin_iam_user_arn
-#   type              = "STANDARD"
-#   kubernetes_groups = ["eks-admins"]
-
-#   depends_on = [module.eks] 
-# }
+module "state" {
+  source                   = "./modules/state"
+  tf_state_bucket_name     = var.tf_state_bucket_name
+  tf_state_dynamodb_table  = var.tf_state_dynamodb_table
+  environment              = var.environment
+}
 
 resource "kubernetes_service_account" "alb_sa" {
   metadata {

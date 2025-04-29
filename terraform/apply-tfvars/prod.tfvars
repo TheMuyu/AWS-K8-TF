@@ -1,6 +1,7 @@
 vpc_name = "task-ce-vpc-prod"
 vpc_cidr = "10.1.0.0/16"
 rds_instance_class = "db.t3.medium"
+environment = "prod"
 
 public_subnet_cidrs  = ["10.1.1.0/24", "10.1.2.0/24"]
 private_subnet_cidrs = ["10.1.101.0/24", "10.1.102.0/24"]
@@ -14,3 +15,6 @@ eks_node_instance_type = "t3.medium"
 eks_node_desired_capacity = 2
 eks_node_min_size = 2
 eks_node_max_size = 4
+
+tf_state_bucket_name       = "aws-k8-tf-state-prod"
+tf_state_dynamodb_table    = "aws-k8-tf-locks-prod"

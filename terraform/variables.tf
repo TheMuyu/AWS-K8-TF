@@ -68,3 +68,18 @@ variable "cluster_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string
 }
+
+variable "tf_state_bucket_name" {
+  description = "S3 bucket name to store Terraform state"
+  type        = string
+}
+
+variable "tf_state_dynamodb_table" {
+  description = "DynamoDB table name for Terraform state locking"
+  type        = string
+}
+
+variable "environment" {
+  description = "Environment"
+  type        = string
+}
