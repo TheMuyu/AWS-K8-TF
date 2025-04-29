@@ -7,28 +7,64 @@ variable "aws_region" {
 variable "vpc_name" {
   description = "Name of the VPC"
   type        = string
-  default     = "task-ce-vpc"
 }
 
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
-  default     = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidrs" {
   description = "List of CIDR blocks for public subnets"
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_subnet_cidrs" {
   description = "List of CIDR blocks for private subnets"
   type        = list(string)
-  default     = ["10.0.101.0/24", "10.0.102.0/24"]
+}
+
+variable "rds_instance_class" {
+  description = "Instance class/type for RDS"
+  type        = string
 }
 
 variable "alert_email_address" {
-  description = "Cloud Watch Alert Email Address"
-  default = "muratyurtdas@gmail.com"
+  description = "CloudWatch Alert Email Address"
+  type        = string
+}
+
+variable "enable_watch_module" {
+  description = "Whether to enable the Watch (FluentBit monitoring) module"
+  type        = bool
+}
+
+variable "eks_node_instance_type" {
+  description = "Instance type for EKS worker nodes"
+  type        = string
+}
+
+variable "eks_node_desired_capacity" {
+  description = "Desired number of EKS worker nodes"
+  type        = number
+}
+
+variable "eks_node_min_size" {
+  description = "Minimum number of EKS worker nodes"
+  type        = number
+}
+
+variable "eks_node_max_size" {
+  description = "Maximum number of EKS worker nodes"
+  type        = number
+}
+
+variable "cluster_name" {
+  description = "Name of the EKS cluster"
+  type        = string
+}
+
+variable "cluster_version" {
+  description = "Kubernetes version for the EKS cluster"
+  type        = string
 }

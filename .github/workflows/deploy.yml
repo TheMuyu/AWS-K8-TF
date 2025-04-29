@@ -60,15 +60,15 @@ jobs:
         run: |
           kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
         
-      - name: Deploy CloudWatch Container Insights
-        run: |
-          kubectl apply -f terraform/modules/eks/manifests/cwagent-configmap.yaml
-          kubectl apply -f terraform/modules/eks/manifests/cwagent-fluentd-eks.yaml
+      # - name: Deploy CloudWatch Container Insights
+      #   run: |
+      #     kubectl apply -f terraform/modules/watch/manifests/cwagent-configmap.yaml
+      #     kubectl apply -f terraform/modules/watch/manifests/cwagent-fluentd-eks.yaml
 
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
         run: |
-          secrets=$(aws secretsmanager get-secret-value --secret-id db_credentials6 --query SecretString --output text)
+          secrets=$(aws secretsmanager get-secret-value --secret-id db_credentials7 --query SecretString --output text)
           echo "$secrets" > db_creds.json
           echo "::set-output name=db_username::$(jq -r .username db_creds.json)"
           echo "::set-output name=db_password::$(jq -r .password db_creds.json)"

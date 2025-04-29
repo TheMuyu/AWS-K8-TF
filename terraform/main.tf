@@ -37,7 +37,8 @@ module "rds" {
   backend_sg_id      = aws_security_group.backend_sg.id
 
   eks_node_sg_id     = module.eks.node_security_group_id
-  bastion_sg_id     = module.bastion.bastion_sg_id
+  bastion_sg_id      = module.bastion.bastion_sg_id
+  rds_instance_class = var.rds_instance_class
 }
 
 module "eks" {
@@ -45,7 +46,13 @@ module "eks" {
 
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnets
-  region             = var.aws_region
+
+  cluster_name              = var.cluster_name
+  cluster_version           = var.cluster_version
+  eks_node_instance_type    = var.eks_node_instance_type
+  eks_node_desired_capacity = var.eks_node_desired_capacity
+  eks_node_min_size         = var.eks_node_min_size
+  eks_node_max_size         = var.eks_node_max_size
 }
 
 module "bastion" {
@@ -61,6 +68,29 @@ module "alb" {
 
   depends_on = [module.eks]
 }
+
+module "watch" {
+  source = "./modules/watch"
+
+  count = var.enable_watch_module ? 1 : 0
+
+  cluster_name        = module.eks.cluster_name
+  oidc_provider_url   = module.eks.oidc_provider_url
+  oidc_provider_arn   = module.eks.oidc_provider_arn
+  aws_region          = var.aws_region
+  alert_email_address = var.alert_email_address
+
+  depends_on = [module.eks]
+}
+
+# resource "aws_eks_access_entry" "iam_user_admin_access" {
+#   cluster_name      = var.cluster_name
+#   principal_arn     = var.eks_admin_iam_user_arn
+#   type              = "STANDARD"
+#   kubernetes_groups = ["eks-admins"]
+
+#   depends_on = [module.eks] 
+# }
 
 resource "kubernetes_service_account" "alb_sa" {
   metadata {
@@ -126,7 +156,7 @@ resource "aws_route53_record" "frontend" {
   type    = "A"
 
   alias {
-    name                   = "k8s-frontendingressgr-0493fcecd1-1201767352.us-east-1.elb.amazonaws.com"
+    name                   = "k8s-frontendingressgr-0493fcecd1-293296825.us-east-1.elb.amazonaws.com"
     zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
     evaluate_target_health = true
   }

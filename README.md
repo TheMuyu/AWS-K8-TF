@@ -55,25 +55,51 @@ This project automates the deployment of a production-grade AWS infrastructure u
 
 ```
 terraform/
+├── .terraform.lock.hcl
 ├── main.tf
-├── variables.tf
 ├── outputs.tf
-├── providers.tf
+├── provider.tf
+├── variables.tf
+├── apply-tfvars/
+│   ├── dev.tfvars
+│   └── prod.tfvars
+├── k8s/
+│   ├── backend-deployment.yaml
+│   ├── backend-hpa.yaml
+│   ├── frontend-deployment.yaml
+│   └── frontend-hpa.yaml
 ├── modules/
 │   ├── alb/
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── bastion/
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
 │   ├── eks/
+│   │   ├── alb_controller_policy.json
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
 │   ├── rds/
-│   └── vpc/
-.github/
-├── workflows/
-│   └── deploy.yml  (GitHub Actions for CI/CD)
-k8s/
-├── backend/
-│   ├── deployment.yaml
-│   ├── service.yaml
-├── frontend/
-│   ├── deployment.yaml
-│   ├── service.yaml
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── vpc/
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   └── watch/
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── variables.tf
+│       └── manifests/
+│           ├── cwagent-configmap.yaml
+│           └── cwagent-fluentd-eks.yaml
+├── scripts/
+│   └── test-scaling.sh
+
 ```
 
 ## ⚙️ Deployment
