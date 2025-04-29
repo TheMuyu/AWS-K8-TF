@@ -83,6 +83,15 @@ module "watch" {
   depends_on = [module.eks]
 }
 
+# resource "aws_eks_access_entry" "iam_user_admin_access" {
+#   cluster_name      = var.cluster_name
+#   principal_arn     = var.eks_admin_iam_user_arn
+#   type              = "STANDARD"
+#   kubernetes_groups = ["eks-admins"]
+
+#   depends_on = [module.eks] 
+# }
+
 resource "kubernetes_service_account" "alb_sa" {
   metadata {
     name      = "aws-load-balancer-controller"
@@ -137,18 +146,18 @@ resource "helm_release" "alb_ingress" {
   }
 }
 
-resource "aws_route53_zone" "main" {
-  name = "muratyurtdas.com"
-}
+# resource "aws_route53_zone" "main" {
+#   name = "muratyurtdas.com"
+# }
 
-resource "aws_route53_record" "frontend" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "app.muratyurtdas.com"
-  type    = "A"
+# resource "aws_route53_record" "frontend" {
+#   zone_id = aws_route53_zone.main.zone_id
+#   name    = "app.muratyurtdas.com"
+#   type    = "A"
 
-  alias {
-    name                   = "k8s-frontendingressgr-0493fcecd1-1201767352.us-east-1.elb.amazonaws.com"
-    zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
-    evaluate_target_health = true
-  }
-}
+#   alias {
+#     name                   = "k8s-frontendingressgr-0493fcecd1-1201767352.us-east-1.elb.amazonaws.com"
+#     zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
+#     evaluate_target_health = true
+#   }
+# }

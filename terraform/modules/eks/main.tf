@@ -82,20 +82,20 @@ module "eks" {
       max_size       = var.eks_node_max_size
 
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
-      iam_role_additional_policies = {
-        CloudWatchAgentPolicy = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-      }
+      # iam_role_additional_policies = {
+      #   CloudWatchAgentPolicy = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+      # }
     }
   }
 
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
   enable_irsa                     = true
+  cluster_enabled_log_types       = []    # disables control plane logs
+  create_cloudwatch_log_group     = false # disables log group creation
 }
 
 locals {
   oidc_provider_arn = module.eks.oidc_provider_arn
   oidc_provider_url = replace(module.eks.oidc_provider, "https://", "")
 }
-
-

@@ -52,12 +52,12 @@ output "bastion_private_key_pem" {
   sensitive   = true
 }
 
-output "hosted_zone_id" {
-  description = "The ID of the Route53 Hosted Zone."
-  value       = aws_route53_zone.main.zone_id
-}
+# output "hosted_zone_id" {
+#   description = "The ID of the Route53 Hosted Zone."
+#   value       = aws_route53_zone.main.zone_id
+# }
 
-output "route53_nameservers" {
-  description = "The list of Route53 nameservers for the hosted zone."
-  value       = aws_route53_zone.main.name_servers
-}
+# output "route53_nameservers" {
+#   description = "The list of Route53 nameservers for the hosted zone."
+#   value       = aws_route53_zone.main.name_servers
+# }
