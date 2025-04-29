@@ -79,6 +79,8 @@ module "watch" {
   oidc_provider_arn   = module.eks.oidc_provider_arn
   aws_region          = var.aws_region
   alert_email_address = var.alert_email_address
+
+  depends_on = [module.eks]
 }
 
 resource "kubernetes_service_account" "alb_sa" {
