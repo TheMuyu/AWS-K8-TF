@@ -1,0 +1,35 @@
+#terraform reinstall resource
+terraform taint module.bastion.aws_instance.bastion
+
+#terraform point new config file
+terraform init -reconfigure
+
+
+# 1. Enable the PostgreSQL 15 repo
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/15/redhat/rhel-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# 2. Disable the built-in PostgreSQL module to avoid conflicts
+sudo dnf -qy module disable postgresql
+
+# 3. Install just the client
+sudo dnf install -y postgresql15
+
+# 4. Test the client
+psql --version
+
+# Connect to a db
+psql -h sumdb-instance.c7ow06ecay06.us-east-1.rds.amazonaws.com -p 5432 -U sumdbuser -d sumdb
+
+
+# Connect ssh through bastion
+ssh -i "C:\Users\Muyu\.ssh\bastion_key.pem" ec2-user@18.215.167.252
+
+
+#update aws cluster access
+aws eks --region us-east-1 update-kubeconfig --name task-ce-eks-cluster
+
+AmazonEKSAdminPolicy, AmazonEKSClusterAdminPolicy
+
+# create metric-server on cluster pod
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
