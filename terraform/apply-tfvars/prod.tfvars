@@ -5,9 +5,20 @@ environment = "prod"
 
 public_subnet_cidrs  = ["10.1.1.0/24", "10.1.2.0/24"]
 private_subnet_cidrs = ["10.1.101.0/24", "10.1.102.0/24"]
+aws_region           = "eu-central-1"
+azs                  = ["eu-central-1a", "eu-central-1b"]
 
 alert_email_address = "muratyurtdas@gmail.com"
-enable_watch_module = true
+
+enable_alb_module = true
+enable_bastion_module = true
+enable_eks_module = true
+enable_rds_module = true
+enable_state_module = false
+enable_vpc_module = true
+enable_watch_module = false
+
+enable_nat_gateway = true 
 
 cluster_name    = "task-ce-eks-cluster"
 cluster_version = "1.31"

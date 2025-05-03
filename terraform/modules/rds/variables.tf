@@ -13,17 +13,14 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
-variable "backend_sg_id" {
-  description = "Security Group ID of the backend application to allow DB access"
-  type        = string
-}
-
 variable "bastion_sg_id" {
-  description = "Security group ID of the bastion host"
+  description = "Optional Security group ID of the bastion host"
   type        = string
+  default     = null
 }
 
 variable "eks_node_sg_id" {
-  description = "EKS Node Security Group ID"
+  description = "Optional EKS Node Security Group ID"
   type        = string
+  default     = null
 }

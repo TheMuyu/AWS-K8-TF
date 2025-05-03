@@ -51,7 +51,7 @@ data "aws_ami" "amazon_linux_2023" {
 resource "aws_instance" "bastion" {
   ami                         = data.aws_ami.amazon_linux_2023.id
   instance_type               = "t2.micro"
-  subnet_id                   = var.subnet_id
+  subnet_id                   = var.public_subnet_id
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
   key_name                    = aws_key_pair.bastion_key.key_name
   associate_public_ip_address = true

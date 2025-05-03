@@ -3,16 +3,18 @@ resource "aws_security_group" "rds_sg" {
   description = "Allow RDS access"
   vpc_id      = var.vpc_id
 
-  ingress {
-    description     = "Allow PostgreSQL"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [
-      var.backend_sg_id,
+  dynamic "ingress" {
+    for_each = compact([
       var.eks_node_sg_id,
       var.bastion_sg_id
-    ]
+    ])
+    content {
+      description     = "Allow PostgreSQL"
+      from_port       = 5432
+      to_port         = 5432
+      protocol        = "tcp"
+      security_groups = [ingress.value]
+    }
   }
 
   egress {
@@ -22,6 +24,7 @@ resource "aws_security_group" "rds_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
 
 resource "random_password" "db_password" {
   length  = 16
