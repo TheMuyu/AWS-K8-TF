@@ -96,7 +96,7 @@ resource "aws_route53_zone" "main" {
 
 #   alias {
 #     name                   = "k8s-frontendingressgr-0493fcecd1-293296825.us-east-1.elb.amazonaws.com"
-#     zone_id                = "Z35SXDOTRQ7X7K" # us-east-1 ALB Hosted Zone ID
+#     zone_id                = "Z215JYRZR1TBD5" # eu-central-1 hosted zone ID for ALB
 #     evaluate_target_health = true
 #   }
 # }
