@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      AWS_REGION: us-east-1
-      ECR_REPO_BACKEND: 147997148756.dkr.ecr.us-east-1.amazonaws.com/aws-k8s-tf/backend
-      ECR_REPO_FRONTEND: 147997148756.dkr.ecr.us-east-1.amazonaws.com/aws-k8s-tf/frontend
+      AWS_REGION: eu-central-1
+      ECR_REPO_BACKEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/backend
+      ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
 
     steps:
       - name: Checkout source code
@@ -55,10 +55,41 @@ jobs:
         run: |
           kubectl apply -f terraform/k8s/frontend-deployment.yaml
           kubectl apply -f terraform/k8s/backend-deployment.yaml
-          
-      - name: Create amazon-cloudwatch namespace
+
+      - name: Wait for Ingress to be Ready
         run: |
-          kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
+          for i in {1..10}; do
+            host=$(kubectl get ingress frontend-ingress -n frontend -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+            if [[ -n "$host" ]]; then echo "Ingress hostname: $host"; break; fi
+            echo "Waiting for ingress to be ready... ($i)"
+            sleep 10
+          done
+          echo "INGRESS_HOSTNAME=$host" >> $GITHUB_ENV
+
+      - name: Create Route 53 Record
+        run: |
+          aws route53 change-resource-record-sets --hosted-zone-id Z215JYRZR1TBD5             --change-batch '{
+              "Changes": [{
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                  "Name": "app.muratyurtdas.com",
+                  "Type": "A",
+                  "AliasTarget": {
+                    "HostedZoneId": "Z215JYRZR1TBD5",
+                    "DNSName": "'$INGRESS_HOSTNAME'",
+                    "EvaluateTargetHealth": true
+                  }
+                }
+              }]
+            }'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-central-1
+          
+      # - name: Create amazon-cloudwatch namespace
+      #   run: |
+      #     kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
         
       # - name: Deploy CloudWatch Container Insights
       #   run: |

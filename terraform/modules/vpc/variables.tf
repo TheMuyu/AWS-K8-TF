@@ -27,3 +27,8 @@ variable "azs" {
   description = "List of availability zones to use in the region"
   type        = list(string)
 }
+
+variable "cluster_name" {
+  description = "EKS Cluster Name"
+  type        = string
+}

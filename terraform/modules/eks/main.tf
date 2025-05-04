@@ -56,8 +56,9 @@ module "eks" {
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
   enable_irsa                     = true
-  cluster_enabled_log_types       = []    # disables control plane logs
-  create_cloudwatch_log_group     = false # disables log group creation
+  #cluster_enabled_log_types       = []    # disables control plane logs
+  #create_cloudwatch_log_group     = false # disables log group creation
+  
 }
 
 locals {

@@ -26,10 +26,11 @@ ssh -i "C:\Users\Muyu\.ssh\bastion_key.pem" ec2-user@18.215.167.252
 
 
 #update aws cluster access
-aws eks --region us-east-1 update-kubeconfig --name task-ce-eks-cluster
+aws eks --region eu-central-1 update-kubeconfig --name task-ce-eks-cluster-dev
 
 AmazonEKSAdminPolicy, AmazonEKSClusterAdminPolicy
 
 # create metric-server on cluster pod
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
+terraform apply "-target=module.rds" -var-file="apply-tfvars/dev.tfvars"

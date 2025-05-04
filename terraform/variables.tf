@@ -88,6 +88,21 @@ variable "azs" {
   type        = list(string)
 }
 
+variable "enable_rds_enhanced_monitoring" {
+  description = "Whether to enable Enhanced Monitoring for RDS"
+  type        = bool
+}
+
+variable "rds_monitoring_interval" {
+  description = "Monitoring interval in seconds (e.g. 1, 5, 10, 15, 30, 60)"
+  type        = number
+}
+
+variable "db_secret_name" {
+  description = "AWS Secret DB Credentials Name"
+  type        = string
+}
+
 # Enable or disable the ALB (Application Load Balancer) module
 variable "enable_alb_module" {
   description = "Whether to enable the ALB module for external HTTP(S) load balancing"

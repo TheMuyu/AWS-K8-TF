@@ -3,19 +3,16 @@ resource "aws_security_group" "rds_sg" {
   description = "Allow RDS access"
   vpc_id      = var.vpc_id
 
-  dynamic "ingress" {
-    for_each = compact([
-      var.eks_node_sg_id,
-      var.bastion_sg_id
-    ])
-    content {
-      description     = "Allow PostgreSQL"
-      from_port       = 5432
-      to_port         = 5432
-      protocol        = "tcp"
-      security_groups = [ingress.value]
-    }
+dynamic "ingress" {
+  for_each = [for sg in [var.eks_node_sg_id, var.bastion_sg_id] : sg if sg != ""]
+  content {
+    description     = "Allow PostgreSQL"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [ingress.value]
   }
+}
 
   egress {
     from_port   = 0
@@ -24,7 +21,6 @@ resource "aws_security_group" "rds_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
 
 resource "random_password" "db_password" {
   length  = 16
@@ -35,8 +31,8 @@ resource "random_password" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
+  name                    = var.db_secret_name
   description             = "Database credentials stored"
-  name                    = "db_credentials"
   recovery_window_in_days = 7
 }
 
@@ -125,12 +121,13 @@ module "rds" {
   manage_master_user_password = false
 
   # Enable Enhanced Monitoring
-  monitoring_interval       = 60  # Monitoring interval in seconds (60 seconds)
-  monitoring_role_arn       = aws_iam_role.rds_monitoring_role.arn  # The role ARN for monitoring
+  monitoring_interval  = var.enable_rds_enhanced_monitoring ? var.rds_monitoring_interval : 0
+  monitoring_role_arn  = var.enable_rds_enhanced_monitoring ? aws_iam_role.rds_monitoring_role.arn : null
+
 
   tags = {
     Terraform   = "true"
     Name        = "ce-task-rds-sumdb"
-    Environment = "dev"
+    Environment = var.environment
   }
 }

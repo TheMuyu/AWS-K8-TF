@@ -71,12 +71,12 @@ data:
   cwagentconfig.json: |
     {
       "agent": {
-        "region": "us-east-1"
+        "region": "eu-central-1"
       },
       "logs": {
         "metrics_collected": {
           "kubernetes": {
-            "cluster_name": "task-ce-eks-cluster",
+            "cluster_name": "task-ce-eks-cluster-dev",
             "metrics_collection_interval": 60
           }
         },
@@ -182,8 +182,8 @@ spec:
 # need to replace the placeholders {{cluster_name}} and {{region_name}}
 apiVersion: v1
 data:
-  cluster.name: task-ce-eks-cluster
-  logs.region: us-east-1
+  cluster.name: task-ce-eks-cluster-dev
+  logs.region: eu-central-1
 kind: ConfigMap
 metadata:
   name: cluster-info

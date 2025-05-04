@@ -8,8 +8,8 @@ module "vpc" {
   azs                  = var.azs
   public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
-
-  enable_nat_gateway = var.enable_nat_gateway
+  cluster_name         = var.cluster_name
+  enable_nat_gateway   = var.enable_nat_gateway
 }
 
 module "eks" {
@@ -45,9 +45,13 @@ module "rds" {
   vpc_id             = module.vpc[0].vpc_id
   private_subnet_ids = module.vpc[0].private_subnets
 
-  eks_node_sg_id     = var.enable_eks_module ? module.eks[0].node_security_group_id : null
-  bastion_sg_id      = var.enable_bastion_module ? module.bastion[0].bastion_sg_id : null
-  rds_instance_class = var.rds_instance_class
+  eks_node_sg_id                 = var.enable_eks_module ? module.eks[0].node_security_group_id : null
+  bastion_sg_id                  = var.enable_bastion_module ? module.bastion[0].bastion_sg_id : null
+  rds_instance_class             = var.rds_instance_class
+  enable_rds_enhanced_monitoring = var.enable_rds_enhanced_monitoring
+  rds_monitoring_interval        = var.rds_monitoring_interval
+  db_secret_name                 = var.db_secret_name
+  environment                    = var.environment
 
   depends_on = [
     module.vpc,
@@ -61,6 +65,8 @@ module "alb" {
   source = "./modules/alb"
 
   vpc_id            = module.vpc[0].vpc_id
+  aws_region        = var.aws_region
+  cluster_name      = var.cluster_name
   oidc_provider_url = module.eks[0].oidc_provider_url
   oidc_provider_arn = module.eks[0].oidc_provider_arn
 
