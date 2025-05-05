@@ -2,6 +2,8 @@ vpc_name           = "task-ce-vpc-prod"
 vpc_cidr           = "10.1.0.0/16"
 rds_instance_class = "db.t3.medium"
 environment        = "prod"
+db_secret_name = "db-credentials-3"
+alb_hosted_zone_id  = "Z215JYRZR1TBD5" #eu-central-1
 
 public_subnet_cidrs  = ["10.1.1.0/24", "10.1.2.0/24"]
 private_subnet_cidrs = ["10.1.101.0/24", "10.1.102.0/24"]

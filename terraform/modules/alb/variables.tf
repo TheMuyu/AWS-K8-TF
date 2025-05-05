@@ -19,3 +19,19 @@ variable "cluster_name" {
   description = "EKS Cluster Name"
   type        = string
 }
+
+variable "acm_domain_name" {
+  description = "The domain name to issue ACM cert for"
+  type        = string
+}
+
+variable "alb_hosted_zone_id" {
+  description = "ALB Route53 Hosted Zone ID for ACM validation"
+  type        = string
+}
+
+variable "environment" {
+  description = "Environment"
+  type        = string
+}
+

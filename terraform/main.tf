@@ -70,6 +70,10 @@ module "alb" {
   oidc_provider_url = module.eks[0].oidc_provider_url
   oidc_provider_arn = module.eks[0].oidc_provider_arn
 
+  acm_domain_name    = "app.muratyurtdas.com"
+  alb_hosted_zone_id = var.alb_hosted_zone_id
+  environment = var.environment
+
   depends_on = [module.eks]
 }
 

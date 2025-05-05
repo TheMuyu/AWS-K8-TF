@@ -121,12 +121,15 @@ resource "kubernetes_ingress_v1" "frontend_ingress" {
     name      = "frontend-ingress"
     namespace = kubernetes_namespace.frontend.metadata[0].name
     annotations = {
-      "kubernetes.io/ingress.class"                      = "alb"
-      "alb.ingress.kubernetes.io/scheme"                 = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type"            = "ip"
-      "alb.ingress.kubernetes.io/listen-ports"           = "[{\"HTTP\": 80}]"
-      "alb.ingress.kubernetes.io/group.name"             = "frontend-ingress-group"
+      "kubernetes.io/ingress.class"                        = "alb"
+      "alb.ingress.kubernetes.io/scheme"                   = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"              = "ip"
+      "alb.ingress.kubernetes.io/listen-ports"             = "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
+      "alb.ingress.kubernetes.io/certificate-arn"          = aws_acm_certificate_validation.this.certificate_arn
+      "alb.ingress.kubernetes.io/ssl-policy"               = "ELBSecurityPolicy-2016-08"
+      "alb.ingress.kubernetes.io/group.name"               = "frontend-ingress-group"
       "alb.ingress.kubernetes.io/load-balancer-attributes" = "idle_timeout.timeout_seconds=60"
+      "alb.ingress.kubernetes.io/ssl-redirect"             = "443"
     }
   }
 
@@ -168,10 +171,41 @@ resource "aws_route53_record" "frontend" {
 
   alias {
     name                   = data.external.ingress_hostname.result.hostname
-    zone_id                = "Z215JYRZR1TBD5" # eu-central-1 hosted zone ID for ALB
+    zone_id                = var.alb_hosted_zone_id # eu-central-1 hosted zone ID for ALB
     evaluate_target_health = true
   }
 
   depends_on = [kubernetes_ingress_v1.frontend_ingress]
 }
 
+
+resource "aws_acm_certificate" "this" {
+  domain_name       = var.acm_domain_name
+  validation_method = "DNS"
+
+  tags = {
+    Name        = "app-cert"
+    Environment = var.environment
+  }
+}
+
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.this.domain_validation_options : dvo.domain_name => {
+      name  = dvo.resource_record_name
+      type  = dvo.resource_record_type
+      value = dvo.resource_record_value
+    }
+  }
+
+  zone_id = aws_route53_zone.main.zone_id
+  name    = each.value.name
+  type    = each.value.type
+  records = [each.value.value]
+  ttl     = 60
+}
+
+resource "aws_acm_certificate_validation" "this" {
+  certificate_arn         = aws_acm_certificate.this.arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+}
