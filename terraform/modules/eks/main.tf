@@ -1,38 +1,3 @@
-resource "aws_iam_policy" "alb_controller" {
-  name   = "AWSLoadBalancerControllerIAMPolicy"
-  policy = file("${path.module}/alb_controller_policy.json")
-}
-
-resource "aws_iam_role" "alb_sa_role" {
-  name = "eks-alb-sa-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Effect = "Allow"
-        Principal = {
-          Federated = local.oidc_provider_arn
-        }
-        Condition = {
-          StringEquals = {
-            "${local.oidc_provider_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-          }
-        }
-      }
-    ]
-  })
-}
-
-
-resource "aws_iam_role_policy_attachment" "alb_policy_attach" {
-  role       = aws_iam_role.alb_sa_role.name
-  policy_arn = aws_iam_policy.alb_controller.arn
-}
-
-
-
 resource "aws_iam_role" "eks_node_group_role" {
   name = "task-ce-eks-node-group-role"
 
@@ -91,8 +56,9 @@ module "eks" {
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
   enable_irsa                     = true
-  cluster_enabled_log_types       = []    # disables control plane logs
-  create_cloudwatch_log_group     = false # disables log group creation
+  #cluster_enabled_log_types       = []    # disables control plane logs
+  #create_cloudwatch_log_group     = false # disables log group creation
+  
 }
 
 locals {

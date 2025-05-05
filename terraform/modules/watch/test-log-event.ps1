@@ -1,5 +1,5 @@
 # Set your AWS region
-$region = "us-east-1"
+$region = "eu-central-1"
 
 # Variables
 $logGroup = "/aws/eks/backend"

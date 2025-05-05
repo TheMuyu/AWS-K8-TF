@@ -3,8 +3,8 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "subnet_id" {
-  description = "Subnet id for bastion (should be public subnet)"
+variable "public_subnet_id" {
+  description = "Public Subnet id for bastion"
   type        = string
 }
 

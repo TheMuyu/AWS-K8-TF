@@ -30,6 +30,3 @@ output "oidc_provider_url" {
   value = module.eks.oidc_provider
 }
 
-output "alb_sa_role_arn" {
-  value = aws_iam_role.alb_sa_role.arn
-}

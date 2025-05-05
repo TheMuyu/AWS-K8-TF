@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      AWS_REGION: us-east-1
-      ECR_REPO_BACKEND: 147997148756.dkr.ecr.us-east-1.amazonaws.com/aws-k8s-tf/backend
-      ECR_REPO_FRONTEND: 147997148756.dkr.ecr.us-east-1.amazonaws.com/aws-k8s-tf/frontend
+      AWS_REGION: eu-central-1
+      ECR_REPO_BACKEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/backend
+      ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
 
     steps:
       - name: Checkout source code
@@ -56,9 +56,9 @@ jobs:
           kubectl apply -f terraform/k8s/frontend-deployment.yaml
           kubectl apply -f terraform/k8s/backend-deployment.yaml
           
-      - name: Create amazon-cloudwatch namespace
-        run: |
-          kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
+      # - name: Create amazon-cloudwatch namespace
+      #   run: |
+      #     kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
         
       # - name: Deploy CloudWatch Container Insights
       #   run: |
@@ -68,7 +68,7 @@ jobs:
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
         run: |
-          secrets=$(aws secretsmanager get-secret-value --secret-id db_credentials --query SecretString --output text)
+          secrets=$(aws secretsmanager get-secret-value --secret-id db-credentials-3 --query SecretString --output text)
           echo "$secrets" > db_creds.json
           echo "::set-output name=db_username::$(jq -r .username db_creds.json)"
           echo "::set-output name=db_password::$(jq -r .password db_creds.json)"

@@ -9,7 +9,6 @@ resource "aws_security_group" "rds_sg" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [
-      var.backend_sg_id,
       var.eks_node_sg_id,
       var.bastion_sg_id
     ]
@@ -32,8 +31,8 @@ resource "random_password" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
+  name                    = var.db_secret_name
   description             = "Database credentials stored"
-  name                    = "db_credentials"
   recovery_window_in_days = 7
 }
 
@@ -122,12 +121,13 @@ module "rds" {
   manage_master_user_password = false
 
   # Enable Enhanced Monitoring
-  monitoring_interval       = 60  # Monitoring interval in seconds (60 seconds)
-  monitoring_role_arn       = aws_iam_role.rds_monitoring_role.arn  # The role ARN for monitoring
+  monitoring_interval  = var.enable_rds_enhanced_monitoring ? var.rds_monitoring_interval : 0
+  monitoring_role_arn  = var.enable_rds_enhanced_monitoring ? aws_iam_role.rds_monitoring_role.arn : null
+
 
   tags = {
     Terraform   = "true"
     Name        = "ce-task-rds-sumdb"
-    Environment = "dev"
+    Environment = var.environment
   }
 }

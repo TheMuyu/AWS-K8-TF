@@ -17,3 +17,18 @@ variable "private_subnet_cidrs" {
   description = "List of private subnet CIDR blocks"
   type        = list(string)
 }
+
+variable "enable_nat_gateway" {
+  description = "Whether to create a NAT Gateway for private subnet internet access"
+  type        = bool
+}
+
+variable "azs" {
+  description = "List of availability zones to use in the region"
+  type        = list(string)
+}
+
+variable "cluster_name" {
+  description = "EKS Cluster Name"
+  type        = string
+}

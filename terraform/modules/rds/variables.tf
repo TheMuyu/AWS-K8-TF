@@ -13,17 +13,34 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
-variable "backend_sg_id" {
-  description = "Security Group ID of the backend application to allow DB access"
-  type        = string
-}
-
 variable "bastion_sg_id" {
-  description = "Security group ID of the bastion host"
+  description = "Optional Security group ID of the bastion host"
   type        = string
+  default     = null
 }
 
 variable "eks_node_sg_id" {
-  description = "EKS Node Security Group ID"
+  description = "Optional EKS Node Security Group ID"
+  type        = string
+  default     = null
+}
+
+variable "enable_rds_enhanced_monitoring" {
+  description = "Whether to enable Enhanced Monitoring for RDS"
+  type        = bool
+}
+
+variable "rds_monitoring_interval" {
+  description = "Monitoring interval in seconds (e.g. 1, 5, 10, 15, 30, 60)"
+  type        = number
+}
+
+variable "environment" {
+  description = "Environment"
+  type        = string
+}
+
+variable "db_secret_name" {
+  description = "AWS Secret DB Credentials Name"
   type        = string
 }

@@ -1,32 +1,177 @@
-resource "aws_security_group" "alb_sg" {
-  name        = "alb-sg"
-  description = "Security group for ALB"
-  vpc_id      = var.vpc_id
+resource "aws_iam_policy" "alb_controller" {
+  name   = "AWSLoadBalancerControllerIAMPolicy"
+  policy = file("${path.module}/alb_controller_policy.json")
+}
 
-  ingress {
-    description = "Allow HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_iam_role" "alb_sa_role" {
+  name = "eks-alb-sa-role"
 
-  ingress {
-    description = "Allow HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = var.oidc_provider_arn
+        }
+        Condition = {
+          StringEquals = {
+            "${var.oidc_provider_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+          }
+        }
+      }
+    ]
+  })
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
-  tags = {
-    Name = "alb-sg"
+resource "aws_iam_role_policy_attachment" "alb_policy_attach" {
+  role       = aws_iam_role.alb_sa_role.name
+  policy_arn = aws_iam_policy.alb_controller.arn
+}
+
+resource "kubernetes_service_account" "alb_sa" {
+  metadata {
+    name      = "aws-load-balancer-controller"
+    namespace = "kube-system"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.alb_sa_role.arn
+    }
   }
 }
+
+resource "helm_release" "alb_ingress" {
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+  version    = "1.10.0"
+  depends_on = [kubernetes_service_account.alb_sa]
+
+  set {
+    name  = "clusterName"
+    value = var.cluster_name
+  }
+
+  set {
+    name  = "replicaCount"
+    value = 1
+  }
+
+  set {
+    name  = "image.tag"
+    value = "v2.12.0"
+  }
+
+  set {
+    name  = "region"
+    value = var.aws_region
+  }
+
+  set {
+    name  = "vpcId"
+    value = var.vpc_id
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
+}
+
+resource "aws_route53_zone" "main" {
+  name = "muratyurtdas.com"
+}
+
+resource "kubernetes_namespace" "frontend" {
+  metadata {
+    name = "frontend"
+  }
+}
+
+resource "kubernetes_service" "frontend" {
+  metadata {
+    name      = "frontend"
+    namespace = kubernetes_namespace.frontend.metadata[0].name
+  }
+
+  spec {
+    selector = {
+      app = "frontend"
+    }
+
+    port {
+      port        = 80
+      target_port = 80
+      protocol    = "TCP"
+    }
+
+    type = "ClusterIP"
+  }
+}
+
+resource "kubernetes_ingress_v1" "frontend_ingress" {
+  metadata {
+    name      = "frontend-ingress"
+    namespace = kubernetes_namespace.frontend.metadata[0].name
+    annotations = {
+      "kubernetes.io/ingress.class"                      = "alb"
+      "alb.ingress.kubernetes.io/scheme"                 = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"            = "ip"
+      "alb.ingress.kubernetes.io/listen-ports"           = "[{\"HTTP\": 80}]"
+      "alb.ingress.kubernetes.io/group.name"             = "frontend-ingress-group"
+      "alb.ingress.kubernetes.io/load-balancer-attributes" = "idle_timeout.timeout_seconds=60"
+    }
+  }
+
+  spec {
+    rule {
+      host = "app.muratyurtdas.com"
+
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+
+          backend {
+            service {
+              name = kubernetes_service.frontend.metadata[0].name
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+data "external" "ingress_hostname" {
+  program = ["powershell", "-Command", <<EOT
+  $hostname = kubectl get ingress frontend-ingress -n frontend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+  Write-Output "{`"hostname`": `"$hostname`"}"
+EOT
+  ]
+}
+
+resource "aws_route53_record" "frontend" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "app.muratyurtdas.com"
+  type    = "A"
+
+  alias {
+    name                   = data.external.ingress_hostname.result.hostname
+    zone_id                = "Z215JYRZR1TBD5" # eu-central-1 hosted zone ID for ALB
+    evaluate_target_health = true
+  }
+
+  depends_on = [kubernetes_ingress_v1.frontend_ingress]
+}
+

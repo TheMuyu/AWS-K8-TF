@@ -17,21 +17,22 @@ provider "aws" {
 }
 
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.eks_cluster_auth.token
+  host                   = try(module.eks[0].cluster_endpoint, null)
+  cluster_ca_certificate = try(base64decode(module.eks[0].cluster_certificate_authority_data), null)
+  token                  = try(data.aws_eks_cluster_auth.eks_cluster_auth[0].token, null)
 }
 
 provider "helm" {
   kubernetes {
-    host                   = module.eks.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    token                  = data.aws_eks_cluster_auth.eks_cluster_auth.token
+    host                   = try(module.eks[0].cluster_endpoint, null)
+    cluster_ca_certificate = try(base64decode(module.eks[0].cluster_certificate_authority_data), null)
+    token                  = try(data.aws_eks_cluster_auth.eks_cluster_auth[0].token, null)
   }
 }
 
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
-  name = module.eks.cluster_name
+  count = var.enable_eks_module ? 1 : 0
+  name  = module.eks[0].cluster_name
 }
 
 #State pointing remote dev
