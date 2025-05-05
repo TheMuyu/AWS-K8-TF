@@ -3,16 +3,16 @@ resource "aws_security_group" "rds_sg" {
   description = "Allow RDS access"
   vpc_id      = var.vpc_id
 
-dynamic "ingress" {
-  for_each = [for sg in [var.eks_node_sg_id, var.bastion_sg_id] : sg if sg != ""]
-  content {
+  ingress {
     description     = "Allow PostgreSQL"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [ingress.value]
+    security_groups = [
+      var.eks_node_sg_id,
+      var.bastion_sg_id
+    ]
   }
-}
 
   egress {
     from_port   = 0

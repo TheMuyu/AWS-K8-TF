@@ -45,8 +45,8 @@ module "rds" {
   vpc_id             = module.vpc[0].vpc_id
   private_subnet_ids = module.vpc[0].private_subnets
 
-  eks_node_sg_id                 = var.enable_eks_module ? module.eks[0].node_security_group_id : null
-  bastion_sg_id                  = var.enable_bastion_module ? module.bastion[0].bastion_sg_id : null
+  eks_node_sg_id                 = module.eks[0].node_security_group_id
+  bastion_sg_id                  = module.bastion[0].bastion_sg_id
   rds_instance_class             = var.rds_instance_class
   enable_rds_enhanced_monitoring = var.enable_rds_enhanced_monitoring
   rds_monitoring_interval        = var.rds_monitoring_interval

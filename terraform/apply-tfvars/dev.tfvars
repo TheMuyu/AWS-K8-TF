@@ -2,7 +2,7 @@ vpc_name           = "task-ce-vpc-dev"
 vpc_cidr           = "10.0.0.0/16"
 rds_instance_class = "db.t3.micro"
 environment        = "dev"
-db_secret_name = "db-credentials-2"
+db_secret_name = "db-credentials-3"
 
 public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
 private_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24"]
@@ -11,7 +11,7 @@ azs                  = ["eu-central-1a", "eu-central-1b"]
 
 alert_email_address = "muratyurtdas@gmail.com"
 
-enable_alb_module              = true
+enable_alb_module              = false
 enable_bastion_module          = true
 enable_eks_module              = true
 enable_rds_module              = true

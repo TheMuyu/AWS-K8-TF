@@ -85,9 +85,9 @@ resource "helm_release" "alb_ingress" {
   }
 }
 
-resource "aws_route53_zone" "main" {
-  name = "muratyurtdas.com"
-}
+# resource "aws_route53_zone" "main" {
+#   name = "muratyurtdas.com"
+# }
 
 # resource "aws_route53_record" "frontend" {
 #   zone_id = aws_route53_zone.main.zone_id
@@ -95,7 +95,7 @@ resource "aws_route53_zone" "main" {
 #   type    = "A"
 
 #   alias {
-#     name                   = "k8s-frontendingressgr-0493fcecd1-293296825.us-east-1.elb.amazonaws.com"
+#     name                   = "k8s-frontendingressgr-18738a18b5-1822582851.eu-central-1.elb.amazonaws.com"
 #     zone_id                = "Z215JYRZR1TBD5" # eu-central-1 hosted zone ID for ALB
 #     evaluate_target_health = true
 #   }
