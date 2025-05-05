@@ -11,7 +11,7 @@ azs                  = ["eu-central-1a", "eu-central-1b"]
 
 alert_email_address = "muratyurtdas@gmail.com"
 
-enable_alb_module              = false
+enable_alb_module              = true
 enable_bastion_module          = true
 enable_eks_module              = true
 enable_rds_module              = true

@@ -85,18 +85,93 @@ resource "helm_release" "alb_ingress" {
   }
 }
 
-# resource "aws_route53_zone" "main" {
-#   name = "muratyurtdas.com"
-# }
+resource "aws_route53_zone" "main" {
+  name = "muratyurtdas.com"
+}
 
-# resource "aws_route53_record" "frontend" {
-#   zone_id = aws_route53_zone.main.zone_id
-#   name    = "app.muratyurtdas.com"
-#   type    = "A"
+resource "kubernetes_namespace" "frontend" {
+  metadata {
+    name = "frontend"
+  }
+}
 
-#   alias {
-#     name                   = "k8s-frontendingressgr-18738a18b5-1822582851.eu-central-1.elb.amazonaws.com"
-#     zone_id                = "Z215JYRZR1TBD5" # eu-central-1 hosted zone ID for ALB
-#     evaluate_target_health = true
-#   }
-# }
+resource "kubernetes_service" "frontend" {
+  metadata {
+    name      = "frontend"
+    namespace = kubernetes_namespace.frontend.metadata[0].name
+  }
+
+  spec {
+    selector = {
+      app = "frontend"
+    }
+
+    port {
+      port        = 80
+      target_port = 80
+      protocol    = "TCP"
+    }
+
+    type = "ClusterIP"
+  }
+}
+
+resource "kubernetes_ingress_v1" "frontend_ingress" {
+  metadata {
+    name      = "frontend-ingress"
+    namespace = kubernetes_namespace.frontend.metadata[0].name
+    annotations = {
+      "kubernetes.io/ingress.class"                      = "alb"
+      "alb.ingress.kubernetes.io/scheme"                 = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"            = "ip"
+      "alb.ingress.kubernetes.io/listen-ports"           = "[{\"HTTP\": 80}]"
+      "alb.ingress.kubernetes.io/group.name"             = "frontend-ingress-group"
+      "alb.ingress.kubernetes.io/load-balancer-attributes" = "idle_timeout.timeout_seconds=60"
+    }
+  }
+
+  spec {
+    rule {
+      host = "app.muratyurtdas.com"
+
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+
+          backend {
+            service {
+              name = kubernetes_service.frontend.metadata[0].name
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+data "external" "ingress_hostname" {
+  program = ["powershell", "-Command", <<EOT
+  $hostname = kubectl get ingress frontend-ingress -n frontend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+  Write-Output "{`"hostname`": `"$hostname`"}"
+EOT
+  ]
+}
+
+resource "aws_route53_record" "frontend" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "app.muratyurtdas.com"
+  type    = "A"
+
+  alias {
+    name                   = data.external.ingress_hostname.result.hostname
+    zone_id                = "Z215JYRZR1TBD5" # eu-central-1 hosted zone ID for ALB
+    evaluate_target_health = true
+  }
+
+  depends_on = [kubernetes_ingress_v1.frontend_ingress]
+}
+
