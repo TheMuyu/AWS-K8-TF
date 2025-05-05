@@ -169,3 +169,8 @@ variable "enable_watch_module" {
     error_message = "Watch module requires the EKS module to be enabled."
   }
 }
+
+variable "alb_hosted_zone_id" {
+  description = "ALB Route53 hosted zone ID"
+  type        = string
+}
