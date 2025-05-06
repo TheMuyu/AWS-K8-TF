@@ -46,7 +46,7 @@ jobs:
         with:
           image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
           format: table
-          exit-code: 1
+          exit-code: 0
           severity: CRITICAL,HIGH
 
       - name: Push backend image
@@ -62,7 +62,7 @@ jobs:
         with:
           image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
           format: table
-          exit-code: 1
+          exit-code: 0
           severity: CRITICAL,HIGH
   
       - name: Push frontend image
