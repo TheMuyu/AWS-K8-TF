@@ -1,18 +1,22 @@
 const axios = require('axios');
 
+const num1 = Math.floor(Math.random() * 100) + 1;
+const num2 = Math.floor(Math.random() * 100) + 1;
+const expected = num1 + num2;
+
 (async () => {
   try {
     const res = await axios.post(
       'https://app.muratyurtdas.com/api/sum',
-      { num1: 5, num2: 8 },
+      { num1, num2 },
       { headers: { 'Content-Type': 'application/json' } }
     );
 
-    if (res.status === 200 && res.data === 13) {
-      console.log('✅ E2E Test Passed: 5 + 8 =', res.data);
+    if (res.status === 200 && res.data === expected) {
+      console.log(`✅ E2E Test Passed: ${num1} + ${num2} = ${res.data}`);
       process.exit(0);
     } else {
-      console.error('❌ E2E Test Failed: Unexpected result:', res.data);
+      console.error(`❌ E2E Test Failed: ${num1} + ${num2} = ${res.data} (expected ${expected})`);
       process.exit(1);
     }
   } catch (err) {
