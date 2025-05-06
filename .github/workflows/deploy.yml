@@ -37,14 +37,36 @@ jobs:
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
 
-      - name: Build and push backend
+      - name: Build backend image
         run: |
           docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
+
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+      - name: Push backend image
+        run: |
           docker push $ECR_REPO_BACKEND:$RELEASE_VERSION
 
-      - name: Build and push frontend
+      - name: Build frontend image
         run: |
           docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend/sum-app
+
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+  
+      - name: Push frontend image
+        run: |
           docker push $ECR_REPO_FRONTEND:$RELEASE_VERSION
 
       - name: Setup kubectl
