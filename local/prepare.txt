@@ -1,0 +1,11 @@
+# Point Docker CLI to Minikube's Docker daemon
+& minikube -p minikube docker-env | Invoke-Expression
+
+# Build your backend and frontend images
+docker build -t local-backend .
+docker build -t local-frontend .
+
+#Enable ingress
+minikube addons enable ingress
+
+kubectl apply -f .\k8s\
