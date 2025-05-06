@@ -1,5 +1,5 @@
 .container {
-    width: 300px;
+    width: 400px;
     margin: auto;
     text-align: center;
     padding: 20px;
@@ -24,3 +24,20 @@
   button:hover {
     background-color: #0056b3;
   }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  
+  th, td {
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ddd;
+  }
+  
+  thead {
+    background-color: #f2f2f2;
+  }
+  

@@ -1,6 +1,8 @@
 package com.muyurtd.sumapi.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -9,20 +11,28 @@ public class SumRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "num1", nullable = false)
     private int num1;
+
+    @Column(name = "num2", nullable = false)
     private int num2;
+
+    @Column(name = "sum", nullable = false)
     private int sum;
+
+    @CreationTimestamp
+    @Column(name = "created_date", updatable = false)
     private LocalDateTime createdDate;
 
     public SumRecord() {
-        this.createdDate = LocalDateTime.now();
+
     }
 
     public SumRecord(int num1, int num2, int sum) {
         this.num1 = num1;
         this.num2 = num2;
         this.sum = sum;
-        this.createdDate = LocalDateTime.now();
     }
 
     public Long getId() { return id; }

@@ -1,7 +1,31 @@
 <div class="container">
-    <h2>Sum Calculator</h2>
-    <input type="number" [(ngModel)]="num1" placeholder="Enter first number" />
-    <input type="number" [(ngModel)]="num2" placeholder="Enter second number" />
-    <button (click)="calculateSum()">Sum</button>
-    <p *ngIf="result !== null">Result: {{ result }}</p>
-  </div>
+  <h2>Sum Two Numbers</h2>
+  <input type="number" [(ngModel)]="num1" placeholder="Enter first number" />
+  <input type="number" [(ngModel)]="num2" placeholder="Enter second number" />
+  <button (click)="calculateSum()">Sum</button>
+  <p>Result: {{ result }}</p>
+  <hr />
+  <h3>Sum History</h3>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Num 1</th>
+        <th>Num 2</th>
+        <th>Sum</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of sumList">
+        <td>{{ item.createdDate | date: 'dd.MM.yyyy HH:mm' }}</td>
+        <td>{{ item.num1 }}</td>
+        <td>{{ item.num2 }}</td>
+        <td>{{ item.sum }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <hr />
+<footer style="text-align: center; font-size: 12px; margin-top: 20px;">
+  Version: {{ version }}
+</footer>
+</div>
