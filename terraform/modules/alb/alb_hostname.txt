@@ -1,0 +1,1 @@
+k8s-frontendingressgr-18738a18b5-1621129182.eu-central-1.elb.amazonaws.com

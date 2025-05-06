@@ -156,12 +156,22 @@ resource "kubernetes_ingress_v1" "frontend_ingress" {
   }
 }
 
-data "external" "ingress_hostname" {
-  program = ["powershell", "-Command", <<EOT
-  $hostname = kubectl get ingress frontend-ingress -n frontend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-  Write-Output "{`"hostname`": `"$hostname`"}"
-EOT
-  ]
+resource "null_resource" "wait_for_alb_hostname" {
+  provisioner "local-exec" {
+    command = "powershell -File wait-alb-hostname.ps1"
+    working_dir = path.module
+  }
+
+  triggers = {
+    always_run = timestamp()
+  }
+
+  depends_on = [kubernetes_ingress_v1.frontend_ingress]
+}
+
+data "local_file" "alb_hostname" {
+  filename   = "${path.module}/alb_hostname.txt"
+  depends_on = [null_resource.wait_for_alb_hostname]
 }
 
 resource "aws_route53_record" "frontend" {
@@ -170,12 +180,12 @@ resource "aws_route53_record" "frontend" {
   type    = "A"
 
   alias {
-    name                   = data.external.ingress_hostname.result.hostname
-    zone_id                = var.alb_hosted_zone_id # eu-central-1 hosted zone ID for ALB
+    name                   = trimspace(data.local_file.alb_hostname.content)
+    zone_id                = var.alb_hosted_zone_id
     evaluate_target_health = true
   }
 
-  depends_on = [kubernetes_ingress_v1.frontend_ingress]
+  depends_on = [kubernetes_ingress_v1.frontend_ingress, null_resource.wait_for_alb_hostname]
 }
 
 
