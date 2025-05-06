@@ -34,3 +34,7 @@ AmazonEKSAdminPolicy, AmazonEKSClusterAdminPolicy
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
 terraform apply "-target=module.rds" -var-file="apply-tfvars/dev.tfvars"
+
+choco install infracost
+infracost auth login
+infracost breakdown --path . --terraform-var-file=apply-tfvars/dev.tfvars
