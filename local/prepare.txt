@@ -9,3 +9,13 @@ docker build -t local-frontend .
 minikube addons enable ingress
 
 kubectl apply -f .\k8s\
+
+ kubectl set image deployment/frontend frontend=local-frontend:v1.0.1
+
+ kubectl get svc backend-service -n frontend -o wide
+
+ frontend-deployment.yaml
+       hostAliases:
+        - ip: "10.96.57.123"   # Replace with actual IP of backend-service
+          hostnames:
+            - "backend-service.backend.svc.cluster.local"
