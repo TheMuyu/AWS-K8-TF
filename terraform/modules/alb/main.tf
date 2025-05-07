@@ -154,11 +154,14 @@ resource "kubernetes_ingress_v1" "frontend_ingress" {
       }
     }
   }
+  depends_on = [
+    helm_release.alb_ingress
+  ]
 }
 
 resource "null_resource" "wait_for_alb_hostname" {
   provisioner "local-exec" {
-    command = "powershell -File wait-alb-hostname.ps1"
+    command     = "powershell -File wait-alb-hostname.ps1"
     working_dir = path.module
   }
 
@@ -197,6 +200,13 @@ resource "aws_acm_certificate" "this" {
     Name        = "app-cert"
     Environment = var.environment
   }
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy = false
+  }
+
+  depends_on = [kubernetes_ingress_v1.frontend_ingress, helm_release.alb_ingress]
 }
 
 resource "aws_route53_record" "cert_validation" {

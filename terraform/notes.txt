@@ -38,3 +38,5 @@ terraform apply "-target=module.rds" -var-file="apply-tfvars/dev.tfvars"
 choco install infracost
 infracost auth login
 infracost breakdown --path . --terraform-var-file=apply-tfvars/dev.tfvars
+
+kubectl patch ingress frontend-ingress -n frontend --type=merge -p '{"metadata":{"finalizers":[]}}'
