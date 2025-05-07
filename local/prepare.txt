@@ -14,8 +14,13 @@ kubectl apply -f .\k8s\
 
  kubectl get svc backend-service -n frontend -o wide
 
- frontend-deployment.yaml
-       hostAliases:
-        - ip: "10.96.57.123"   # Replace with actual IP of backend-service
-          hostnames:
-            - "backend-service.backend.svc.cluster.local"
+kubectl port-forward svc/frontend-service 4200:80
+
+minikube service frontend-service
+
+minikube stop
+minikube delete --all --purge
+docker system prune -a --volumes
+minikube start --driver=docker
+
+kubectl delete pod load-generator

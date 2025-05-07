@@ -27,6 +27,11 @@ spec:
           value: myuser
         - name: DB_PASSWORD
           value: mypass
+        resources:
+          requests:
+            cpu: "200m"
+          limits:
+            cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
@@ -38,3 +43,4 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
+    

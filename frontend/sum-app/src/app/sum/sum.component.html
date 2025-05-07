@@ -1,4 +1,7 @@
 <div class="container">
+  <div *ngIf="apiHealthy !== null" [ngClass]="apiHealthy ? 'alert-success' : 'alert-danger'" class="alert text-center">
+    {{ apiHealthy ? 'Backend API is up!' : 'Backend API unavailable' }}
+  </div>
   <h2>Sum Two Numbers</h2>
   <input type="number" [(ngModel)]="num1" placeholder="Enter first number" />
   <input type="number" [(ngModel)]="num2" placeholder="Enter second number" />
