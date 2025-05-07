@@ -12,10 +12,6 @@ spec:
       labels:
         app: frontend
     spec:
-      hostAliases:
-        - ip: "10.101.94.240"  # Replace with actual backend-service ClusterIP
-          hostnames:
-            - "backend-service.backend.svc.cluster.local"
       containers:
       - name: frontend
         image: local-frontend

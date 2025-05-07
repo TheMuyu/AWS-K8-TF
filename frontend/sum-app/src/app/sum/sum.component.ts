@@ -16,10 +16,12 @@ export class SumComponent {
   result: number | null = null;
   sumList: SumRecord[] = [];
   version = version;
+  apiHealthy: boolean | null = null;
 
   constructor(private sumService: SumService) { }
 
   ngOnInit(): void {
+    this.sumService.checkApiHealth().subscribe(status => this.apiHealthy = status);
     this.loadSumList();
   }
 
@@ -36,4 +38,5 @@ export class SumComponent {
       this.sumList = list;
     });
   }
+
 }

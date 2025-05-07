@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { SumRecord } from './sum-record.model';
 
 @Injectable({
@@ -19,5 +19,12 @@ export class SumService {
 
   getSumList(): Observable<SumRecord[]> {
     return this.http.get<SumRecord[]>(`${this.apiUrl}/list`);
+  }
+
+  checkApiHealth(): Observable<boolean> {
+    return this.http.get(`${this.apiUrl}/health`, { responseType: 'text' }).pipe(
+      map(res => res.trim() === 'Backend is healthy'),
+      catchError(() => of(false))
+    );
   }
 }
