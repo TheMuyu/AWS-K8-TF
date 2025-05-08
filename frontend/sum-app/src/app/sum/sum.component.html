@@ -1,34 +1,101 @@
-<div class="container">
-  <div *ngIf="apiHealthy !== null" [ngClass]="apiHealthy ? 'alert-success' : 'alert-danger'" class="alert text-center">
-    {{ apiHealthy ? 'Backend API is up!' : 'Backend API unavailable' }}
+
+<div class="container my-5">
+  <div class="row justify-content-center gx-4">
+
+    <!-- Form Column (Always visible, width adjusts dynamically) -->
+    <div
+      [ngClass]="apiHealthy ? 'col-md-5' : 'col-md-8'"
+      class="mx-auto p-4 rounded shadow-sm"
+      [ngStyle]="{ 'background-color': '#f1f3f5', 'max-width': !apiHealthy ? '500px' : null }"
+    >
+      <div *ngIf="apiHealthy !== null" class="alert text-center" [ngClass]="apiHealthy ? 'alert-success' : 'alert-danger'">
+        {{ apiHealthy ? '✅ Backend API is up!' : '❌ Backend API unavailable' }}
+      </div>
+
+      <h2 class="mb-4 fw-bold text-dark text-center">Sum Two Numbers</h2>
+
+      <div class="mb-3">
+        <label class="form-label">First Number</label>
+        <input type="number" [(ngModel)]="num1" class="form-control" placeholder="Enter first number" [disabled]="!apiHealthy" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Second Number</label>
+        <input type="number" [(ngModel)]="num2" class="form-control" placeholder="Enter second number" [disabled]="!apiHealthy" />
+      </div>
+
+      <div class="text-center mb-3">
+        <button (click)="calculateSum()" class="btn btn-primary btn-sm px-4" [disabled]="!apiHealthy">➕ Sum</button>
+      </div>
+
+      <div class="alert alert-info text-center mx-auto py-1 mb-3" style="max-width: 400px; font-size: 0.9rem;">
+        {{ result !== null ? ('Result: ' + result) : 'No result yet.' }}
+      </div>
+
+      <footer class="text-muted text-center mt-4 small">
+        Version: {{ version }}
+      </footer>
+    </div>
+
+    <!-- Sum History Column (Only if API is healthy) -->
+    <div *ngIf="apiHealthy" class="col-md-7">
+      <div class="p-4 rounded shadow-sm mx-auto" style="background-color: #f1f3f5; max-width: 700px;">
+        <h3 class="mb-3 text-secondary text-center">Sum History</h3>
+
+        <div *ngIf="loading" class="text-center mb-3">
+          <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <div class="mt-2 text-muted">Loading sum history...</div>
+        </div>
+        
+        <div class="table-responsive" *ngIf="!loading">
+          <table class="table table-bordered table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Num 1</th>
+                <th>Num 2</th>
+                <th>Sum</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of sumList">
+                <td>{{ item.createdDate | date: 'dd.MM.yyyy HH:mm' }}</td>
+                <td>{{ item.num1 }}</td>
+                <td>{{ item.num2 }}</td>
+                <td>{{ item.sum }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <nav *ngIf="totalPages > 1" class="mt-3 d-flex justify-content-center">
+          <ul class="pagination pagination-sm">
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <button class="page-link" (click)="goToPage(0)">«</button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
+            </li>
+            <li class="page-item"
+                *ngFor="let page of pageNumbers"
+                [class.active]="page === currentPage"
+                [class.disabled]="page === '...'">
+              <button class="page-link" (click)="goToPage(asNumber(page))">
+                {{ displayPageLabel(page) }}
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage >= totalPages - 1">
+              <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage >= totalPages - 1">
+              <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
   </div>
-  <h2>Sum Two Numbers</h2>
-  <input type="number" [(ngModel)]="num1" placeholder="Enter first number" />
-  <input type="number" [(ngModel)]="num2" placeholder="Enter second number" />
-  <button (click)="calculateSum()">Sum</button>
-  <p>Result: {{ result }}</p>
-  <hr />
-  <h3>Sum History</h3>
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Num 1</th>
-        <th>Num 2</th>
-        <th>Sum</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let item of sumList">
-        <td>{{ item.createdDate | date: 'dd.MM.yyyy HH:mm' }}</td>
-        <td>{{ item.num1 }}</td>
-        <td>{{ item.num2 }}</td>
-        <td>{{ item.sum }}</td>
-      </tr>
-    </tbody>
-  </table>
-  <hr />
-<footer style="text-align: center; font-size: 12px; margin-top: 20px;">
-  Version: {{ version }}
-</footer>
 </div>
