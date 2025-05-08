@@ -5,10 +5,13 @@ import com.muyurtd.sumapi.dto.SumRequest;
 import com.muyurtd.sumapi.model.SumRecord;
 import com.muyurtd.sumapi.repository.SumRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 
 
 @RestController
@@ -33,16 +36,18 @@ public class SumController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<SumList>> listSums() {
-        List<SumList> responses = sumRepository.findAllByOrderByCreatedDateDesc()
-                .stream()
+    public ResponseEntity<Page<SumList>> listSums(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
+        Page<SumList> responses = sumRepository.findAllByOrderByCreatedDateDesc(pageable)
                 .map(record -> new SumList(
                         record.getNum1(),
                         record.getNum2(),
                         record.getSum(),
                         record.getCreatedDate()
-                ))
-                .toList();
+                ));
 
         return ResponseEntity.ok(responses);
     }

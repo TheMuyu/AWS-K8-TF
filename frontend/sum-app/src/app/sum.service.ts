@@ -17,8 +17,8 @@ export class SumService {
     return this.http.post<number>(`${this.apiUrl}/sum`, { num1, num2 });
   }
 
-  getSumList(): Observable<SumRecord[]> {
-    return this.http.get<SumRecord[]>(`${this.apiUrl}/list`);
+  getSumList(page: number = 0, size: number = 10): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/list?page=${page}&size=${size}`);
   }
 
   checkApiHealth(): Observable<boolean> {
