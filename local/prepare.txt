@@ -33,3 +33,6 @@ chmod +x build-and-deploy.sh
 
 chmod +x load-generator.sh
 ./load-generator.sh
+
+chmod +x deploy-cleanup.sh
+./deploy-cleanup.sh
