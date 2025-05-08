@@ -24,3 +24,6 @@ docker system prune -a --volumes
 minikube start --driver=docker
 
 kubectl delete pod load-generator
+
+chmod +x build-and-deploy.sh
+.\build-and-deploy.sh
