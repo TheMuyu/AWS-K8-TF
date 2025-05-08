@@ -25,5 +25,11 @@ minikube start --driver=docker
 
 kubectl delete pod load-generator
 
+sudo usermod -aG docker $USER
+newgrp docker
+
 chmod +x build-and-deploy.sh
-.\build-and-deploy.sh
+./build-and-deploy.sh
+
+chmod +x load-generator.sh
+./load-generator.sh
