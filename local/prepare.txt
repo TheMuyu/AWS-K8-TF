@@ -36,3 +36,5 @@ chmod +x load-generator.sh
 
 chmod +x deploy-cleanup.sh
 ./deploy-cleanup.sh
+
+chmod +x *.sh

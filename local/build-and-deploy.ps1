@@ -7,7 +7,7 @@ Write-Host "`n🔧 Building Docker images inside Minikube..." -ForegroundColor C
 docker build -t local-backend ..\backend\SumApi
 
 # Build frontend image
-docker build -t local-frontend ..\frontend\sum-app
+docker build -t local-frontend -f ..\frontend\sum-app\Dockerfile-local ..\frontend\sum-app
 
 Write-Host "`n✅ Images built successfully." -ForegroundColor Green
 

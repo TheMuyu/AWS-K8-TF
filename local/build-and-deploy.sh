@@ -9,7 +9,7 @@ echo -e "\n🔧 Building Docker images inside Minikube..."
 docker build -t local-backend ../backend/SumApi
 
 # Build frontend image
-docker build -t local-frontend ../frontend/sum-app
+docker build -t local-frontend -f ../frontend/sum-app/Dockerfile-local ../frontend/sum-app
 
 echo -e "\n✅ Images built successfully."
 
