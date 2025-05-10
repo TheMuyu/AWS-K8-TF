@@ -1,0 +1,8 @@
+replicaCount: 1
+image:
+  repository: local-frontend
+  tag: "latest"
+  pullPolicy: Never
+service:
+  type: NodePort
+  port: 80

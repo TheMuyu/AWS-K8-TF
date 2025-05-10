@@ -1,0 +1,4 @@
+chmod +x *.sh
+./build.sh
+./deploy.sh
+./clean.sh
