@@ -97,28 +97,16 @@ jobs:
           rds_endpoint=$(aws rds describe-db-instances --db-instance-identifier sumdb-instance --query "DBInstances[0].Endpoint.Address" --output text)
           echo "::set-output name=endpoint::$rds_endpoint"
 
-      - name: Create Kubernetes Secret for backend
-        run: |
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: db-credentials
-            namespace: backend
-          type: Opaque
-          stringData:
-            username: "${{ steps.db_secrets.outputs.db_username }}"
-            password: "${{ steps.db_secrets.outputs.db_password }}"
-            dbname: "${{ steps.db_secrets.outputs.db_name }}"
-            host: "${{ steps.rds.outputs.endpoint }}"
-          EOF
-
       - name: Deploy with Helm
         run: |
           helm upgrade --install backend ./terraform/helm/backend \
             --namespace default \
             --set image.repository=$ECR_REPO_BACKEND \
-            --set image.tag=$RELEASE_VERSION
+            --set image.tag=$RELEASE_VERSION \
+            --set dbCredentials.username="${{ steps.db_secrets.outputs.db_username }}" \
+            --set dbCredentials.password="${{ steps.db_secrets.outputs.db_password }}" \
+            --set dbCredentials.dbname="${{ steps.db_secrets.outputs.db_name }}" \
+            --set dbCredentials.host="${{ steps.rds.outputs.endpoint }}"
 
           helm upgrade --install frontend ./terraform/helm/frontend \
             --namespace default \

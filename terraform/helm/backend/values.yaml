@@ -16,3 +16,9 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 2
   targetCPUUtilizationPercentage: 90
+
+dbCredentials:
+  username: ""
+  password: ""
+  dbname: ""
+  host: ""
