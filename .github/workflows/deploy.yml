@@ -136,11 +136,45 @@ jobs:
             --dns-name muratyurtdas.com \
             --query "HostedZones[0].Id" \
             --output text)
+          ZONE_ID=${ZONE_ID#/hostedzone/}
           echo "HOSTED_ZONE_ID=$ZONE_ID" >> $GITHUB_ENV
+
+      - name: Get ALB Canonical Hosted Zone ID
+        id: get_alb_zone
+        run: |
+          echo "Looking up ALB hostname..."
+          ALB_HOST=${{ env.ALB_HOST }}
+          if [ -z "$ALB_HOST" ]; then
+            echo "ERROR: ALB_HOST not set"
+            exit 1
+          fi
+
+          echo "Getting ALB ARN..."
+          ALB_ARN=$(aws elbv2 describe-load-balancers \
+            --query "LoadBalancers[?DNSName=='$ALB_HOST'].LoadBalancerArn" \
+            --output text)
+
+          if [ -z "$ALB_ARN" ]; then
+            echo "ERROR: ALB ARN not found"
+            exit 1
+          fi
+
+          echo "Fetching Canonical Hosted Zone ID..."
+          ALIAS_ZONE_ID=$(aws elbv2 describe-load-balancers \
+            --load-balancer-arns "$ALB_ARN" \
+            --query "LoadBalancers[0].CanonicalHostedZoneId" \
+            --output text)
+
+          if [ -z "$ALIAS_ZONE_ID" ]; then
+            echo "ERROR: CanonicalHostedZoneId not found"
+            exit 1
+          fi
+
+          echo "ALIAS_ZONE_ID=$ALIAS_ZONE_ID" >> $GITHUB_ENV
 
       - name: Update Route53 Record
         run: |
-          ALIAS_ZONE_ID=Z215JYRZR1TBD
+          
           RECORD_NAME=app.muratyurtdas.com
           ALIAS_NAME=$ALB_HOST
 
@@ -154,7 +188,7 @@ jobs:
                   "Name": "$RECORD_NAME",
                   "Type": "A",
                   "AliasTarget": {
-                    "HostedZoneId": "$ALIAS_ZONE_ID",
+                    "HostedZoneId": "${{ env.ALIAS_ZONE_ID }}",
                     "DNSName": "$ALIAS_NAME",
                     "EvaluateTargetHealth": true
                   }
