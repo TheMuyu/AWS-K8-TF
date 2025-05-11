@@ -7,7 +7,7 @@ const expected = num1 + num2;
 (async () => {
   try {
     const res = await axios.post(
-      'https://app.muratyurtdas.com/api/sum',
+      'http://app.muratyurtdas.com/api/sum',
       { num1, num2 },
       { headers: { 'Content-Type': 'application/json' } }
     );
