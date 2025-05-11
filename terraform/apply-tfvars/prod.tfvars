@@ -12,13 +12,10 @@ azs                  = ["eu-central-1a", "eu-central-1b"]
 
 alert_email_address = "muratyurtdas@gmail.com"
 
-enable_alb_module              = true
-enable_bastion_module          = true
-enable_eks_module              = true
-enable_rds_module              = true
+enable_alb_module              = false
 enable_state_module            = false
-enable_vpc_module              = true
 enable_watch_module            = false
+
 enable_nat_gateway             = true
 enable_rds_enhanced_monitoring = true
 rds_monitoring_interval        = 60

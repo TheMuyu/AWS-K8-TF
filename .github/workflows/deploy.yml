@@ -72,11 +72,6 @@ jobs:
       - name: Setup kubectl
         run: |
           aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
-
-      - name: Deploy Kubernetes Resources
-        run: |
-          kubectl apply -f terraform/k8s/frontend-deployment.yaml
-          kubectl apply -f terraform/k8s/backend-deployment.yaml
           
       # - name: Create amazon-cloudwatch namespace
       #   run: |
@@ -90,7 +85,7 @@ jobs:
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
         run: |
-          secrets=$(aws secretsmanager get-secret-value --secret-id db-credentials-4 --query SecretString --output text)
+          secrets=$(aws secretsmanager get-secret-value --secret-id db-credentials-5 --query SecretString --output text)
           echo "$secrets" > db_creds.json
           echo "::set-output name=db_username::$(jq -r .username db_creds.json)"
           echo "::set-output name=db_password::$(jq -r .password db_creds.json)"
@@ -102,27 +97,107 @@ jobs:
           rds_endpoint=$(aws rds describe-db-instances --db-instance-identifier sumdb-instance --query "DBInstances[0].Endpoint.Address" --output text)
           echo "::set-output name=endpoint::$rds_endpoint"
 
-      - name: Create Kubernetes Secret for backend
+      - name: Deploy with Helm
         run: |
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: db-credentials
-            namespace: backend
-          type: Opaque
-          stringData:
-            username: "${{ steps.db_secrets.outputs.db_username }}"
-            password: "${{ steps.db_secrets.outputs.db_password }}"
-            dbname: "${{ steps.db_secrets.outputs.db_name }}"
-            host: "${{ steps.rds.outputs.endpoint }}"
+          helm upgrade --install backend ./terraform/helm/backend \
+            --namespace default \
+            --set image.repository=$ECR_REPO_BACKEND \
+            --set image.tag=$RELEASE_VERSION \
+            --set dbCredentials.username="${{ steps.db_secrets.outputs.db_username }}" \
+            --set dbCredentials.password="${{ steps.db_secrets.outputs.db_password }}" \
+            --set dbCredentials.dbname="${{ steps.db_secrets.outputs.db_name }}" \
+            --set dbCredentials.host="${{ steps.rds.outputs.endpoint }}"
+
+          helm upgrade --install frontend ./terraform/helm/frontend \
+            --namespace default \
+            --set image.repository=$ECR_REPO_FRONTEND \
+            --set image.tag=$RELEASE_VERSION \
+            --set ingress.host=app.muratyurtdas.com
+
+      - name: Wait for Ingress and extract ALB hostname
+        id: get_ingress
+        run: |
+          for i in {1..30}; do
+            ALB_HOST=$(kubectl get ingress frontend-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [[ "$ALB_HOST" != "" ]]; then break; fi
+            echo "Waiting for ALB to be ready... ($i)"
+            sleep 10
+          done
+          if [[ "$ALB_HOST" == "" ]]; then
+            echo "ERROR: ALB hostname is still empty after waiting."
+            exit 1
+          fi
+          echo "ALB_HOST=$ALB_HOST" >> $GITHUB_ENV
+
+      - name: Get Route53 Hosted Zone ID
+        id: get_zone
+        run: |
+          ZONE_ID=$(aws route53 list-hosted-zones-by-name \
+            --dns-name muratyurtdas.com \
+            --query "HostedZones[0].Id" \
+            --output text)
+          ZONE_ID=${ZONE_ID#/hostedzone/}
+          echo "HOSTED_ZONE_ID=$ZONE_ID" >> $GITHUB_ENV
+
+      - name: Get ALB Canonical Hosted Zone ID
+        id: get_alb_zone
+        run: |
+          echo "Looking up ALB hostname..."
+          ALB_HOST=${{ env.ALB_HOST }}
+          if [ -z "$ALB_HOST" ]; then
+            echo "ERROR: ALB_HOST not set"
+            exit 1
+          fi
+
+          echo "Getting ALB ARN..."
+          ALB_ARN=$(aws elbv2 describe-load-balancers \
+            --query "LoadBalancers[?DNSName=='$ALB_HOST'].LoadBalancerArn" \
+            --output text)
+
+          if [ -z "$ALB_ARN" ]; then
+            echo "ERROR: ALB ARN not found"
+            exit 1
+          fi
+
+          echo "Fetching Canonical Hosted Zone ID..."
+          ALIAS_ZONE_ID=$(aws elbv2 describe-load-balancers \
+            --load-balancer-arns "$ALB_ARN" \
+            --query "LoadBalancers[0].CanonicalHostedZoneId" \
+            --output text)
+
+          if [ -z "$ALIAS_ZONE_ID" ]; then
+            echo "ERROR: CanonicalHostedZoneId not found"
+            exit 1
+          fi
+
+          echo "ALIAS_ZONE_ID=$ALIAS_ZONE_ID" >> $GITHUB_ENV
+
+      - name: Update Route53 Record
+        run: |
+          
+          RECORD_NAME=app.muratyurtdas.com
+          ALIAS_NAME=$ALB_HOST
+
+          cat <<EOF > change-batch.json
+          {
+            "Comment": "Update alias record to point to ALB",
+            "Changes": [
+              {
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                  "Name": "$RECORD_NAME",
+                  "Type": "A",
+                  "AliasTarget": {
+                    "HostedZoneId": "${{ env.ALIAS_ZONE_ID }}",
+                    "DNSName": "$ALIAS_NAME",
+                    "EvaluateTargetHealth": true
+                  }
+                }
+              }
+            ]
+          }
           EOF
 
-      - name: Update backend deployment image
-        run: |
-          kubectl set image deployment/backend -n backend backend=$ECR_REPO_BACKEND:$RELEASE_VERSION
-
-      - name: Update frontend deployment image
-        run: |
-          kubectl set image deployment/frontend -n frontend frontend=$ECR_REPO_FRONTEND:$RELEASE_VERSION
-
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id $HOSTED_ZONE_ID \
+            --change-batch file://change-batch.json
