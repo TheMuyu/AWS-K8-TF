@@ -41,13 +41,13 @@ jobs:
         run: |
           docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
 
-      # - name: Scan backend image with Trivy
-      #   uses: aquasecurity/trivy-action@master
-      #   with:
-      #     image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
-      #     format: table
-      #     exit-code: 0
-      #     severity: CRITICAL,HIGH
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
 
       - name: Push backend image
         run: |
@@ -57,13 +57,13 @@ jobs:
         run: |
           docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend/sum-app
 
-      # - name: Scan frontend image with Trivy
-      #   uses: aquasecurity/trivy-action@master
-      #   with:
-      #     image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
-      #     format: table
-      #     exit-code: 0
-      #     severity: CRITICAL,HIGH
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
   
       - name: Push frontend image
         run: |
