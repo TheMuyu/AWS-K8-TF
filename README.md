@@ -1,20 +1,8 @@
+# AWS-K8-TF: Full Stack Application on AWS EKS with Terraform and GitHub Actions
 
-# AWS-K8-TF
+This project deploys a full-stack application to AWS using Kubernetes and Infrastructure as Code with Terraform. It uses GitHub Actions for CI/CD, deploying a React frontend and Java Spring Boot backend connected to a PostgreSQL database.
 
-This project automates the deployment of a production-grade AWS infrastructure using Terraform, Kubernetes (EKS), and related AWS services.
-
-## 🚀 Project Overview
-
-- **Terraform** is used as Infrastructure as Code (IaC) to provision:
-  - VPC with public and private subnets
-  - EKS Cluster (Managed Kubernetes)
-  - RDS PostgreSQL database
-  - Application Load Balancer (ALB) with Route53 DNS integration
-  - IAM Roles, Security Groups
-  - CloudWatch monitoring (metrics, logging, alarms)
-- **Kubernetes** is used to deploy:
-  - Backend Service (Java Spring Boot API)
-  - Frontend Service (Angular Application)
+---
 
 ## 🛠️ Architecture
 
@@ -40,113 +28,113 @@ This project automates the deployment of a production-grade AWS infrastructure u
                                            +----------------+
 ```
 
-## 📋 Prerequisites
-
-- AWS Account
-- Route53 Hosted Zone
-- Domain (e.g., muratyurtdas.com)
-- AWS CLI configured
-- kubectl installed
-- Terraform v1.5+
-- Helm v3+
-- Docker installed (for building images)
-
-## 📂 Project Structure
+## 🧱 Project Structure
 
 ```
-terraform/
-├── .terraform.lock.hcl
-├── main.tf
-├── outputs.tf
-├── provider.tf
-├── variables.tf
-├── apply-tfvars/
-│   ├── dev.tfvars
-│   └── prod.tfvars
-├── k8s/
-│   ├── backend-deployment.yaml
-│   ├── backend-hpa.yaml
-│   ├── frontend-deployment.yaml
-│   └── frontend-hpa.yaml
-├── modules/
-│   ├── alb/
-│   │   ├── main.tf
-│   │   ├── outputs.tf
-│   │   └── variables.tf
-│   ├── bastion/
-│   │   ├── main.tf
-│   │   ├── outputs.tf
-│   │   └── variables.tf
-│   ├── eks/
-│   │   ├── alb_controller_policy.json
-│   │   ├── main.tf
-│   │   ├── outputs.tf
-│   │   └── variables.tf
-│   ├── rds/
-│   │   ├── main.tf
-│   │   ├── outputs.tf
-│   │   └── variables.tf
-│   ├── vpc/
-│   │   ├── main.tf
-│   │   ├── outputs.tf
-│   │   └── variables.tf
-│   └── watch/
-│       ├── main.tf
-│       ├── outputs.tf
-│       ├── variables.tf
-│       └── manifests/
-│           ├── cwagent-configmap.yaml
-│           └── cwagent-fluentd-eks.yaml
-├── scripts/
-│   └── test-scaling.sh
-
+AWS-K8-TF/
+├── .github/workflows/           
+│   ├── deploy.yml               
+│   └── e2e.yml                  
+├── frontend/                    
+│   ├── Angular
+├── backend/                     
+│   ├── Java
+├── terraform/                   
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   ├── apply-tfvars/
+│   └── modules/
+│       ├── vpc/
+│       ├── eks/
+│       ├── rds/
+│       ├── alb/
+│       ├── bastion/
+│       ├── state/
+│       └── watch/
+└── README.md                    
 ```
-
-## ⚙️ Deployment
-
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/TheMuyu/AWS-K8-TF.git
-   cd AWS-K8-TF/terraform
-   ```
-
-2. **Terraform Initialization**
-   ```bash
-   terraform init
-   ```
-
-3. **Terraform Plan and Apply**
-   ```bash
-   terraform plan
-   terraform apply
-   ```
-
-4. **Deploy Applications to EKS**
-   - Update `k8s/backend/deployment.yaml` and `k8s/frontend/deployment.yaml` with Docker image paths.
-   - Apply Kubernetes manifests:
-   ```bash
-   kubectl apply -f k8s/backend/
-   kubectl apply -f k8s/frontend/
-   ```
-
-5. **Set up Domain DNS (Route53)**
-   - ALB DNS is automatically registered via Terraform.
-   - Confirm your `app.muratyurtdas.com` (or other subdomain) points correctly.
-
-6. **Monitor Logs and Metrics**
-   - CloudWatch integration enabled for pods, nodes, and services.
-   - CloudWatch Alarms notify critical issues via SNS.
-
-## 🛡️ Security Highlights
-
-- Backend and RDS only accessible within private subnets.
-- Secrets stored securely in AWS Secrets Manager.
-- IAM roles and policies follow least privilege principles.
-
-## 📜 License
-
-This project is licensed under the MIT License.
 
 ---
 
-> Made with ❤️ using AWS, Kubernetes, Terraform and DevOps best practices.
+## 🚀 Features
+
+- **Modular Terraform Infrastructure** for EKS, VPC, ALB, RDS, and IAM.
+- **GitHub Actions CI/CD** for both backend and frontend pipelines.
+- **Helm Charts** for deploying frontend and backend to EKS.
+- **ALB Ingress + Route53** for DNS-based access via `app.muratyurtdas.com`.
+- **PostgreSQL RDS** with persistent storage.
+- **Secrets Management** via Terraform for sensitive data.
+- **HPA Support** via Helm templates.
+
+---
+
+## 📦 Deploy Instructions
+
+### Prerequisites
+
+- AWS CLI & credentials
+- Terraform CLI
+- Docker & GitHub CLI
+- kubectl & helm
+
+### Setup
+
+1. Clone:
+
+```bash
+git clone https://github.com/TheMuyu/AWS-K8-TF.git && cd AWS-K8-TF
+```
+
+2. Configure your `.tfvars` file in `terraform/apply-tfvars/dev.tfvars`.
+
+3. Deploy infrastructure:
+
+```bash
+cd terraform
+terraform init
+terraform apply -var-file="apply-tfvars/dev.tfvars"
+```
+
+4. Connect `kubectl`:
+
+```bash
+aws eks --region eu-central-1 update-kubeconfig --name <cluster-name>
+```
+
+5. Deploy app via Helm:
+
+```bash
+helm upgrade --install backend ./backend
+helm upgrade --install frontend ./frontend
+```
+
+---
+
+## 🛠 CI/CD with GitHub Actions
+
+Workflows:
+- `deploy.yml`: Provisions infra, builds Docker images, deploys Helm charts.
+- `e2e.yml`: Waits on `deploy.yml` and runs integration tests.
+
+Features:
+- Ingress hostname extraction
+- Auto Route53 ALIAS record creation
+- Robust error handling with retries
+
+---
+
+## 🔐 Secrets and ALB Ingress
+
+- ALB hostname is dynamically fetched after deployment.
+- Route53 record is created in workflow (not in Terraform) to prevent destroy delays.
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+For contributions, issues, or enhancements, feel free to open a PR or issue.
