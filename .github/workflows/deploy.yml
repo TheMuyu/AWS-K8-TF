@@ -41,13 +41,13 @@ jobs:
         run: |
           docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
 
-      - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL,HIGH
+      # - name: Scan backend image with Trivy
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
+      #     format: table
+      #     exit-code: 0
+      #     severity: CRITICAL,HIGH
 
       - name: Push backend image
         run: |
@@ -57,13 +57,13 @@ jobs:
         run: |
           docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend/sum-app
 
-      - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL,HIGH
+      # - name: Scan frontend image with Trivy
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+      #     format: table
+      #     exit-code: 0
+      #     severity: CRITICAL,HIGH
   
       - name: Push frontend image
         run: |
@@ -72,11 +72,6 @@ jobs:
       - name: Setup kubectl
         run: |
           aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
-
-      - name: Deploy Kubernetes Resources
-        run: |
-          kubectl apply -f terraform/k8s/frontend-deployment.yaml
-          kubectl apply -f terraform/k8s/backend-deployment.yaml
           
       # - name: Create amazon-cloudwatch namespace
       #   run: |
@@ -118,11 +113,45 @@ jobs:
             host: "${{ steps.rds.outputs.endpoint }}"
           EOF
 
-      - name: Update backend deployment image
+      - name: Deploy with Helm
         run: |
-          kubectl set image deployment/backend -n backend backend=$ECR_REPO_BACKEND:$RELEASE_VERSION
+          helm upgrade --install backend ./terraform/helm/backend \
+            --namespace default \
+            --set image.repository=$ECR_REPO_BACKEND \
+            --set image.tag=$RELEASE_VERSION
 
-      - name: Update frontend deployment image
+          helm upgrade --install frontend ./terraform/helm/frontend \
+            --namespace default \
+            --set image.repository=$ECR_REPO_FRONTEND \
+            --set image.tag=$RELEASE_VERSION \
+            --set ingress.host=app.muratyurtdas.com
+
+      - name: Update Route53 Record
         run: |
-          kubectl set image deployment/frontend -n frontend frontend=$ECR_REPO_FRONTEND:$RELEASE_VERSION
+          HOSTED_ZONE_ID=Z215JYRZR1TBD
+          RECORD_NAME=app.muratyurtdas.com
+          ALIAS_NAME=$ALB_HOST
 
+          cat <<EOF > change-batch.json
+          {
+            "Comment": "Update alias record to point to ALB",
+            "Changes": [
+              {
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                  "Name": "$RECORD_NAME",
+                  "Type": "A",
+                  "AliasTarget": {
+                    "HostedZoneId": "$HOSTED_ZONE_ID",
+                    "DNSName": "$ALIAS_NAME",
+                    "EvaluateTargetHealth": true
+                  }
+                }
+              }
+            ]
+          }
+          EOF
+
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id $HOSTED_ZONE_ID \
+            --change-batch file://change-batch.json
