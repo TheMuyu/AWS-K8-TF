@@ -114,6 +114,27 @@ jobs:
             --set image.tag=$RELEASE_VERSION \
             --set ingress.host=app.muratyurtdas.com
 
+      - name: Wait for Ingress and extract ALB hostname
+        id: get_ingress
+        run: |
+          for i in {{1..30}}; do
+            ALB_HOST=$(kubectl get ingress frontend-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [[ "$ALB_HOST" != "" ]]; then break; fi
+            echo "Waiting for ALB to be ready... ($i)"
+            sleep 10
+          done
+          echo "ALB_HOST=$ALB_HOST" >> $GITHUB_ENV
+
+      - name: Get Route53 Hosted Zone ID
+        id: get_zone
+        run: |
+          ZONE_ID=$(aws route53 list-hosted-zones-by-name \
+            --dns-name muratyurtdas.com \
+            --query "HostedZones[0].Id" \
+            --output text)
+          ZONE_ID=${ZONE_ID#/hostedzone/}
+          echo "HOSTED_ZONE_ID=$ZONE_ID" >> $GITHUB_ENV
+
       - name: Update Route53 Record
         run: |
           HOSTED_ZONE_ID=Z215JYRZR1TBD
@@ -138,7 +159,7 @@ jobs:
               }
             ]
           }
-          EOF
+            EOF
 
           aws route53 change-resource-record-sets \
             --hosted-zone-id $HOSTED_ZONE_ID \
