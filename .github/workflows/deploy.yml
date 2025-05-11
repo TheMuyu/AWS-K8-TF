@@ -141,7 +141,6 @@ jobs:
 
       - name: Update Route53 Record
         run: |
-          ALIAS_ZONE_ID=Z215JYRZR1TBD
           RECORD_NAME=app.muratyurtdas.com
           ALIAS_NAME=$ALB_HOST
 
@@ -155,7 +154,7 @@ jobs:
                   "Name": "$RECORD_NAME",
                   "Type": "A",
                   "AliasTarget": {
-                    "HostedZoneId": "$ALIAS_ZONE_ID",
+                    "HostedZoneId": "Z215JYRZR1TBD",
                     "DNSName": "$ALIAS_NAME",
                     "EvaluateTargetHealth": true
                   }
