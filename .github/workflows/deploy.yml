@@ -120,7 +120,20 @@ jobs:
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
         run: |
-          secrets=$(aws secretsmanager get-secret-value --secret-id db-credentials-7 --query SecretString --output text)
+          # Get the latest db-credentials secret
+          LATEST_SECRET=$(aws secretsmanager list-secrets \
+            --query "SecretList[?starts_with(Name, 'db-credentials-')].Name" \
+            --output text | tr '\t' '\n' | sort -V | tail -n 1)
+          
+          if [ -z "$LATEST_SECRET" ]; then
+            echo "ERROR: No db-credentials secret found"
+            exit 1
+          fi
+          
+          echo "Using secret: $LATEST_SECRET"
+          
+          # Get the secret value
+          secrets=$(aws secretsmanager get-secret-value --secret-id "$LATEST_SECRET" --query SecretString --output text)
           echo "$secrets" > db_creds.json
           echo "::set-output name=db_username::$(jq -r .username db_creds.json)"
           echo "::set-output name=db_password::$(jq -r .password db_creds.json)"
