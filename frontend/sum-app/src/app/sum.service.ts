@@ -27,4 +27,8 @@ export class SumService {
       catchError(() => of(false))
     );
   }
+
+  getApiVersion(): Observable<string> {
+    return this.http.get(`${this.apiUrl}/version`, { responseType: 'text' });
+  }
 }

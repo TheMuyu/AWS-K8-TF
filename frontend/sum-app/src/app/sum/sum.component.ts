@@ -21,11 +21,13 @@ export class SumComponent {
   pageSize = 10;
   totalPages = 0;
   loading = false;
+  apiVersion: string | null = null;
 
   constructor(private sumService: SumService) { }
 
   ngOnInit(): void {
     this.sumService.checkApiHealth().subscribe(status => this.apiHealthy = status);
+    this.sumService.getApiVersion().subscribe(version => this.apiVersion = version);
     this.loadSumList();
   }
 

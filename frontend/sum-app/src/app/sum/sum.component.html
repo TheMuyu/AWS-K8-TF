@@ -33,7 +33,10 @@
       </div>
 
       <footer class="text-muted text-center mt-4 small">
-        Version: {{ version }}
+        App Version: {{ version }}
+      </footer>
+      <footer *ngIf="apiHealthy" class="text-muted text-center mt-4 small">
+        Api Version: {{ apiVersion }}
       </footer>
     </div>
 
