@@ -13,7 +13,7 @@ jobs:
 
     env:
       AWS_REGION: eu-central-1
-      ECR_REPO_BACKEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/backend
+      ECR_REPO_BACKEND: ${{ secrets.ECR_REPO_BACKEND }}
 
     steps:
       - name: Checkout source code
@@ -54,7 +54,7 @@ jobs:
 
     env:
       AWS_REGION: eu-central-1
-      ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
+      ECR_REPO_FRONTEND: ${{ secrets.ECR_REPO_FRONTEND }}
 
     steps:
       - name: Checkout source code
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: eu-central-1
-      ECR_REPO_BACKEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/backend
+      ECR_REPO_BACKEND: ${{ secrets.ECR_REPO_BACKEND }}
 
     steps:
       - name: Checkout source code
@@ -165,7 +165,7 @@ jobs:
 
     env:
       AWS_REGION: eu-central-1
-      ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
+      ECR_REPO_FRONTEND: ${{ secrets.ECR_REPO_FRONTEND }}
 
     steps:
       - name: Checkout source code
