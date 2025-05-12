@@ -71,6 +71,19 @@ AWS-K8-TF/
 
 ## 📦 Deploy Instructions
 
+### 🔐 GitHub Secrets
+
+Ensure the following secrets are configured in your GitHub repository:
+
+- `AWS_ACCESS_KEY_ID`: Your AWS access key.
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret access key.
+- `AWS_REGION`: AWS region (e.g., eu-central-1).
+- `ECR_REPO_BACKEND`: ECR repository URI for backend.
+- `ECR_REPO_FRONTEND`: ECR repository URI for frontend.
+- `EKS_CLUSTER_NAME`: Name of the EKS cluster.
+
+These secrets are used by the GitHub Actions workflows to authenticate with AWS, build and push Docker images, and deploy to EKS.
+
 ### Prerequisites
 
 - AWS CLI & credentials
