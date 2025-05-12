@@ -28,14 +28,20 @@ jobs:
 
       - name: Get release tag
         id: get_version
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "📦 Using release version: ${GITHUB_REF#refs/tags/}"
 
       - name: Login to Amazon ECR
-        run: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
+        run: |
+          echo "🔐 Logging into ECR repository: $ECR_REPO_BACKEND"
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
 
       - name: Build and push backend image
         run: |
+          echo "🏗️ Building backend Docker image..."
           docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
+          echo "📤 Pushing backend image to ECR..."
           docker push $ECR_REPO_BACKEND:$RELEASE_VERSION
 
       - name: Scan backend image with Trivy
@@ -69,14 +75,20 @@ jobs:
 
       - name: Get release tag
         id: get_version
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "📦 Using release version: ${GITHUB_REF#refs/tags/}"
 
       - name: Login to Amazon ECR
-        run: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
+        run: |
+          echo "🔐 Logging into ECR repository: $ECR_REPO_FRONTEND"
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
 
       - name: Build and push frontend image
         run: |
+          echo "🏗️ Building frontend Docker image..."
           docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend/sum-app
+          echo "📤 Pushing frontend image to ECR..."
           docker push $ECR_REPO_FRONTEND:$RELEASE_VERSION
 
       - name: Scan frontend image with Trivy
@@ -111,42 +123,49 @@ jobs:
 
       - name: Get release tag
         id: get_version
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "📦 Using release version: ${GITHUB_REF#refs/tags/}"
 
       - name: Setup kubectl
         run: |
+          echo "🔧 Configuring kubectl for EKS cluster..."
           aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
 
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
         run: |
+          echo "🔑 Retrieving latest database credentials..."
           # Get the latest db-credentials secret
           LATEST_SECRET=$(aws secretsmanager list-secrets \
             --query "SecretList[?starts_with(Name, 'db-credentials-')].Name" \
             --output text | tr '\t' '\n' | sort -V | tail -n 1)
           
           if [ -z "$LATEST_SECRET" ]; then
-            echo "ERROR: No db-credentials secret found"
+            echo "❌ ERROR: No db-credentials secret found"
             exit 1
           fi
           
-          echo "Using secret: $LATEST_SECRET"
+          echo "✅ Using secret: $LATEST_SECRET"
           
           # Get the secret value
           secrets=$(aws secretsmanager get-secret-value --secret-id "$LATEST_SECRET" --query SecretString --output text)
           echo "$secrets" > db_creds.json
-          echo "::set-output name=db_username::$(jq -r .username db_creds.json)"
-          echo "::set-output name=db_password::$(jq -r .password db_creds.json)"
-          echo "::set-output name=db_name::$(jq -r .dbname db_creds.json)"
+          echo "db_username=$(jq -r .username db_creds.json)" >> $GITHUB_OUTPUT
+          echo "db_password=$(jq -r .password db_creds.json)" >> $GITHUB_OUTPUT
+          echo "db_name=$(jq -r .dbname db_creds.json)" >> $GITHUB_OUTPUT
 
       - name: Get RDS endpoint
         id: rds
         run: |
+          echo "🔍 Retrieving RDS endpoint..."
           rds_endpoint=$(aws rds describe-db-instances --db-instance-identifier sumdb-instance --query "DBInstances[0].Endpoint.Address" --output text)
-          echo "::set-output name=endpoint::$rds_endpoint"
+          echo "endpoint=$rds_endpoint" >> $GITHUB_OUTPUT
+          echo "✅ RDS endpoint retrieved: $rds_endpoint"
 
       - name: Deploy backend with Helm
         run: |
+          echo "🚀 Deploying backend to EKS..."
           helm upgrade --install backend ./terraform/helm/backend \
             --namespace default \
             --set image.repository=$ECR_REPO_BACKEND \
@@ -155,6 +174,7 @@ jobs:
             --set dbCredentials.password="${{ steps.db_secrets.outputs.db_password }}" \
             --set dbCredentials.dbname="${{ steps.db_secrets.outputs.db_name }}" \
             --set dbCredentials.host="${{ steps.rds.outputs.endpoint }}"
+          echo "✅ Backend deployment completed"
 
   deploy-frontend:
     name: Deploy Frontend
@@ -180,34 +200,43 @@ jobs:
 
       - name: Get release tag
         id: get_version
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "📦 Using release version: ${GITHUB_REF#refs/tags/}"
 
       - name: Setup kubectl
         run: |
+          echo "🔧 Configuring kubectl for EKS cluster..."
           aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
 
       - name: Deploy frontend with Helm
         run: |
+          echo "🚀 Deploying frontend to EKS..."
           helm upgrade --install frontend ./terraform/helm/frontend \
             --namespace default \
             --set image.repository=$ECR_REPO_FRONTEND \
             --set image.tag=$RELEASE_VERSION \
             --set ingress.host=app.muratyurtdas.com
+          echo "✅ Frontend deployment completed"
 
       - name: Wait for Ingress and extract ALB hostname
         id: get_ingress
         run: |
+          echo "⏳ Waiting for ALB to be ready..."
           for i in {1..30}; do
             ALB_HOST=$(kubectl get ingress frontend-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            if [[ "$ALB_HOST" != "" ]]; then break; fi
-            echo "Waiting for ALB to be ready... ($i)"
+            if [[ "$ALB_HOST" != "" ]]; then
+              echo "✅ ALB hostname found: $ALB_HOST"
+              echo "alb_hostname=$ALB_HOST" >> $GITHUB_OUTPUT
+              break
+            fi
+            echo "⏳ Waiting for ALB to be ready... ($i/30)"
             sleep 10
           done
           if [[ "$ALB_HOST" == "" ]]; then
-            echo "ERROR: ALB hostname is still empty after waiting."
+            echo "❌ ERROR: ALB hostname is still empty after waiting."
             exit 1
           fi
-          echo "alb_hostname=$ALB_HOST" >> $GITHUB_OUTPUT
 
   route53:
     name: Update Route53 Records
@@ -225,45 +254,52 @@ jobs:
       - name: Get Route53 Hosted Zone ID
         id: get_zone
         run: |
+          echo "🔍 Retrieving Route53 hosted zone ID..."
           ZONE_ID=$(aws route53 list-hosted-zones-by-name \
             --dns-name muratyurtdas.com \
             --query "HostedZones[0].Id" \
             --output text)
           ZONE_ID=${ZONE_ID#/hostedzone/}
           echo "HOSTED_ZONE_ID=$ZONE_ID" >> $GITHUB_ENV
+          echo "✅ Hosted zone ID retrieved: $ZONE_ID"
 
       - name: Get ALB Canonical Hosted Zone ID
         id: get_alb_zone
         run: |
+          echo "🔍 Getting ALB information..."
           ALB_HOST=${{ needs.deploy-frontend.outputs.alb_hostname }}
           if [ -z "$ALB_HOST" ]; then
-            echo "ERROR: ALB_HOST not set"
+            echo "❌ ERROR: ALB_HOST not set"
             exit 1
           fi
 
+          echo "🔍 Looking up ALB ARN..."
           ALB_ARN=$(aws elbv2 describe-load-balancers \
             --query "LoadBalancers[?DNSName=='$ALB_HOST'].LoadBalancerArn" \
             --output text)
 
           if [ -z "$ALB_ARN" ]; then
-            echo "ERROR: ALB ARN not found"
+            echo "❌ ERROR: ALB ARN not found"
             exit 1
           fi
 
+          echo "🔍 Getting Canonical Hosted Zone ID..."
           ALIAS_ZONE_ID=$(aws elbv2 describe-load-balancers \
             --load-balancer-arns "$ALB_ARN" \
             --query "LoadBalancers[0].CanonicalHostedZoneId" \
             --output text)
 
           if [ -z "$ALIAS_ZONE_ID" ]; then
-            echo "ERROR: CanonicalHostedZoneId not found"
+            echo "❌ ERROR: CanonicalHostedZoneId not found"
             exit 1
           fi
 
           echo "ALIAS_ZONE_ID=$ALIAS_ZONE_ID" >> $GITHUB_ENV
+          echo "✅ ALB information retrieved successfully"
 
       - name: Update Route53 Record
         run: |
+          echo "🔄 Updating Route53 records..."
           RECORD_NAME=app.muratyurtdas.com
           ALIAS_NAME=${{ needs.deploy-frontend.outputs.alb_hostname }}
 
@@ -287,6 +323,8 @@ jobs:
           }
           EOF
 
+          echo "📝 Applying DNS changes..."
           aws route53 change-resource-record-sets \
             --hosted-zone-id $HOSTED_ZONE_ID \
             --change-batch file://change-batch.json
+          echo "✅ Route53 records updated successfully"
