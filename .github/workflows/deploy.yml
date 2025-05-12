@@ -5,9 +5,70 @@ on:
     types: [created]
 
 jobs:
-  deploy:
-    name: Build and Deploy to AWS
+  build:
+    name: Build Docker Images
     runs-on: ubuntu-latest
+    outputs:
+      backend_image: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
+      frontend_image: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+
+    env:
+      AWS_REGION: eu-central-1
+      ECR_REPO_BACKEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/backend
+      ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get release tag
+        id: get_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
+
+      - name: Build and push backend image
+        run: |
+          docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
+          docker push $ECR_REPO_BACKEND:$RELEASE_VERSION
+
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+      - name: Build and push frontend image
+        run: |
+          docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend/sum-app
+          docker push $ECR_REPO_FRONTEND:$RELEASE_VERSION
+
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+  deploy:
+    name: Deploy to EKS
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      alb_hostname: ${{ steps.get_ingress.outputs.alb_hostname }}
 
     env:
       AWS_REGION: eu-central-1
@@ -32,65 +93,19 @@ jobs:
         id: get_version
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
-
-      - name: Build backend image
-        run: |
-          docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
-
-      - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL,HIGH
-
-      - name: Push backend image
-        run: |
-          docker push $ECR_REPO_BACKEND:$RELEASE_VERSION
-
-      - name: Build frontend image
-        run: |
-          docker build -t $ECR_REPO_FRONTEND:$RELEASE_VERSION ./frontend/sum-app
-
-      - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL,HIGH
-  
-      - name: Push frontend image
-        run: |
-          docker push $ECR_REPO_FRONTEND:$RELEASE_VERSION
-
       - name: Setup kubectl
         run: |
           aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
-          
-      # - name: Create amazon-cloudwatch namespace
-      #   run: |
-      #     kubectl create namespace amazon-cloudwatch --dry-run=client -o yaml | kubectl apply -f -
-        
-      # - name: Deploy CloudWatch Container Insights
-      #   run: |
-      #     kubectl apply -f terraform/modules/watch/manifests/cwagent-configmap.yaml
-      #     kubectl apply -f terraform/modules/watch/manifests/cwagent-fluentd-eks.yaml
 
       - name: Retrieve DB credentials from AWS Secrets Manager
         id: db_secrets
         run: |
-          secrets=$(aws secretsmanager get-secret-value --secret-id db-credentials-7 --query SecretString --output text)
+          secrets=$(aws secretsmanager get-secret-value --secret-id db-credentials-5 --query SecretString --output text)
           echo "$secrets" > db_creds.json
           echo "::set-output name=db_username::$(jq -r .username db_creds.json)"
           echo "::set-output name=db_password::$(jq -r .password db_creds.json)"
           echo "::set-output name=db_name::$(jq -r .dbname db_creds.json)"
-          
+
       - name: Get RDS endpoint
         id: rds
         run: |
@@ -127,7 +142,20 @@ jobs:
             echo "ERROR: ALB hostname is still empty after waiting."
             exit 1
           fi
-          echo "ALB_HOST=$ALB_HOST" >> $GITHUB_ENV
+          echo "alb_hostname=$ALB_HOST" >> $GITHUB_OUTPUT
+
+  route53:
+    name: Update Route53 Records
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
 
       - name: Get Route53 Hosted Zone ID
         id: get_zone
@@ -142,14 +170,12 @@ jobs:
       - name: Get ALB Canonical Hosted Zone ID
         id: get_alb_zone
         run: |
-          echo "Looking up ALB hostname..."
-          ALB_HOST=${{ env.ALB_HOST }}
+          ALB_HOST=${{ needs.deploy.outputs.alb_hostname }}
           if [ -z "$ALB_HOST" ]; then
             echo "ERROR: ALB_HOST not set"
             exit 1
           fi
 
-          echo "Getting ALB ARN..."
           ALB_ARN=$(aws elbv2 describe-load-balancers \
             --query "LoadBalancers[?DNSName=='$ALB_HOST'].LoadBalancerArn" \
             --output text)
@@ -159,7 +185,6 @@ jobs:
             exit 1
           fi
 
-          echo "Fetching Canonical Hosted Zone ID..."
           ALIAS_ZONE_ID=$(aws elbv2 describe-load-balancers \
             --load-balancer-arns "$ALB_ARN" \
             --query "LoadBalancers[0].CanonicalHostedZoneId" \
@@ -174,9 +199,8 @@ jobs:
 
       - name: Update Route53 Record
         run: |
-          
           RECORD_NAME=app.muratyurtdas.com
-          ALIAS_NAME=$ALB_HOST
+          ALIAS_NAME=${{ needs.deploy.outputs.alb_hostname }}
 
           cat <<EOF > change-batch.json
           {
