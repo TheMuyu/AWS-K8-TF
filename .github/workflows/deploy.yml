@@ -5,16 +5,55 @@ on:
     types: [created]
 
 jobs:
-  build:
-    name: Build Docker Images
+  build-backend:
+    name: Build Backend Image
     runs-on: ubuntu-latest
     outputs:
-      backend_image: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
-      frontend_image: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+      image: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
 
     env:
       AWS_REGION: eu-central-1
       ECR_REPO_BACKEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/backend
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get release tag
+        id: get_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Login to Amazon ECR
+        run: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
+
+      - name: Build and push backend image
+        run: |
+          docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
+          docker push $ECR_REPO_BACKEND:$RELEASE_VERSION
+
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+  build-frontend:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+
+    env:
+      AWS_REGION: eu-central-1
       ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
 
     steps:
@@ -33,22 +72,7 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_BACKEND
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
-
-      - name: Build and push backend image
-        run: |
-          docker build -t $ECR_REPO_BACKEND:$RELEASE_VERSION ./backend/SumApi
-          docker push $ECR_REPO_BACKEND:$RELEASE_VERSION
-
-      - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL,HIGH
+        run: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_FRONTEND
 
       - name: Build and push frontend image
         run: |
@@ -63,17 +87,13 @@ jobs:
           exit-code: 0
           severity: CRITICAL,HIGH
 
-  deploy:
-    name: Deploy to EKS
-    needs: build
+  deploy-backend:
+    name: Deploy Backend
+    needs: build-backend
     runs-on: ubuntu-latest
-    outputs:
-      alb_hostname: ${{ steps.get_ingress.outputs.alb_hostname }}
-
     env:
       AWS_REGION: eu-central-1
       ECR_REPO_BACKEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/backend
-      ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
 
     steps:
       - name: Checkout source code
@@ -112,7 +132,7 @@ jobs:
           rds_endpoint=$(aws rds describe-db-instances --db-instance-identifier sumdb-instance --query "DBInstances[0].Endpoint.Address" --output text)
           echo "::set-output name=endpoint::$rds_endpoint"
 
-      - name: Deploy with Helm
+      - name: Deploy backend with Helm
         run: |
           helm upgrade --install backend ./terraform/helm/backend \
             --namespace default \
@@ -123,6 +143,38 @@ jobs:
             --set dbCredentials.dbname="${{ steps.db_secrets.outputs.db_name }}" \
             --set dbCredentials.host="${{ steps.rds.outputs.endpoint }}"
 
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    outputs:
+      alb_hostname: ${{ steps.get_ingress.outputs.alb_hostname }}
+
+    env:
+      AWS_REGION: eu-central-1
+      ECR_REPO_FRONTEND: 482397832867.dkr.ecr.eu-central-1.amazonaws.com/aws-k8s-tf/frontend
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get release tag
+        id: get_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Setup kubectl
+        run: |
+          aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Deploy frontend with Helm
+        run: |
           helm upgrade --install frontend ./terraform/helm/frontend \
             --namespace default \
             --set image.repository=$ECR_REPO_FRONTEND \
@@ -146,7 +198,7 @@ jobs:
 
   route53:
     name: Update Route53 Records
-    needs: deploy
+    needs: [deploy-backend, deploy-frontend]
     runs-on: ubuntu-latest
 
     steps:
@@ -170,7 +222,7 @@ jobs:
       - name: Get ALB Canonical Hosted Zone ID
         id: get_alb_zone
         run: |
-          ALB_HOST=${{ needs.deploy.outputs.alb_hostname }}
+          ALB_HOST=${{ needs.deploy-frontend.outputs.alb_hostname }}
           if [ -z "$ALB_HOST" ]; then
             echo "ERROR: ALB_HOST not set"
             exit 1
@@ -200,7 +252,7 @@ jobs:
       - name: Update Route53 Record
         run: |
           RECORD_NAME=app.muratyurtdas.com
-          ALIAS_NAME=${{ needs.deploy.outputs.alb_hostname }}
+          ALIAS_NAME=${{ needs.deploy-frontend.outputs.alb_hostname }}
 
           cat <<EOF > change-batch.json
           {
