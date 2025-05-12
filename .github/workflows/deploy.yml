@@ -9,7 +9,7 @@ jobs:
     name: Build Backend Image
     runs-on: ubuntu-latest
     outputs:
-      image: ${{ env.ECR_REPO_BACKEND }}:${{ env.RELEASE_VERSION }}
+      version: ${{ env.RELEASE_VERSION }}
 
     env:
       AWS_REGION: eu-central-1
@@ -56,7 +56,7 @@ jobs:
     name: Build Frontend Image
     runs-on: ubuntu-latest
     outputs:
-      image: ${{ env.ECR_REPO_FRONTEND }}:${{ env.RELEASE_VERSION }}
+      version: ${{ env.RELEASE_VERSION }}
 
     env:
       AWS_REGION: eu-central-1
@@ -169,7 +169,7 @@ jobs:
           helm upgrade --install backend ./terraform/helm/backend \
             --namespace default \
             --set image.repository=$ECR_REPO_BACKEND \
-            --set image.tag=$RELEASE_VERSION \
+            --set image.tag=${{ needs.build-backend.outputs.version }} \
             --set dbCredentials.username="${{ steps.db_secrets.outputs.db_username }}" \
             --set dbCredentials.password="${{ steps.db_secrets.outputs.db_password }}" \
             --set dbCredentials.dbname="${{ steps.db_secrets.outputs.db_name }}" \
@@ -215,7 +215,7 @@ jobs:
           helm upgrade --install frontend ./terraform/helm/frontend \
             --namespace default \
             --set image.repository=$ECR_REPO_FRONTEND \
-            --set image.tag=$RELEASE_VERSION \
+            --set image.tag=${{ needs.build-frontend.outputs.version }} \
             --set ingress.host=app.muratyurtdas.com
           echo "✅ Frontend deployment completed"
 
