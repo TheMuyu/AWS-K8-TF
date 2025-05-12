@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.muyurtd.sumapi</groupId>
 	<artifactId>SumApi</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.4.1-SNAPSHOT</version>
 	<name>SumApi</name>
 	<description>Sum for 2 numbers</description>
 	<url/>
@@ -58,6 +58,12 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
