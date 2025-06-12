@@ -239,7 +239,7 @@ jobs:
           fi
 
   route53:
-    name: Update Route53 Records
+    name: Finalize Deployment
     needs: [deploy-backend, deploy-frontend]
     runs-on: ubuntu-latest
 

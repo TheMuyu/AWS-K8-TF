@@ -40,3 +40,5 @@ infracost auth login
 infracost breakdown --path . --terraform-var-file=apply-tfvars/dev.tfvars
 
 kubectl patch ingress frontend-ingress -n frontend --type=merge -p '{"metadata":{"finalizers":[]}}'
+
+terraform plan -var-file="apply-tfvars/dev.tfvars"
