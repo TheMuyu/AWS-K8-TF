@@ -14,7 +14,7 @@ alert_email_address = "muratyurtdas@gmail.com"
 
 enable_alb_module              = true
 enable_state_module            = false
-enable_watch_module            = false
+enable_watch_module            = true
 
 enable_nat_gateway             = true
 enable_rds_enhanced_monitoring = false

@@ -18,11 +18,13 @@ sudo dnf install -y postgresql15
 psql --version
 
 # Connect to a db
-psql -h sumdb-instance.c7ow06ecay06.us-east-1.rds.amazonaws.com -p 5432 -U sumdbuser -d sumdb
+psql -h sumdb-instance.cvaieew4m8bk.eu-central-1.rds.amazonaws.com -p 5432 -U sumdbuser -d sumdb
 
 
 # Connect ssh through bastion
 ssh -i "C:\Users\Muyu\.ssh\bastion_key.pem" ec2-user@18.215.167.252
+
+ssh -i bastion_key.pem ec2-user@18.153.82.187
 
 
 #update aws cluster access
